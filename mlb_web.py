@@ -222,43 +222,54 @@ def player_stats(player_id):
         sb_pace = (int(stats.get("stolenBases", 0)) / games) * 162
 
         if avg >= bat_season.get("avg_alltime", 0.37):
-            anomalies.append({"msg": f"Batting .{int(avg*1000)} — ALL-TIME TERRITORY", "level": "alltime"})
+            nugget = "No one has finished above .400 since Ted Williams in 1941" if avg >= 0.400 else f"Last player to finish above .{int(avg*1000)}: Tony Gwynn (.394 in 1994)"
+            anomalies.append({"msg": f"Batting .{int(avg*1000)} — ALL-TIME TERRITORY", "level": "alltime", "nugget": nugget})
             comparisons.append({"stat": "AVG", "current": f".{int(avg*1000)}", "record": f".406", "holder": RECORDS["avg"]["holder"], "pct": round(avg / 0.406 * 100)})
         elif avg >= bat_season.get("avg_anomalous", 0.33):
-            anomalies.append({"msg": f"Batting .{int(avg*1000)} — elite", "level": "alert"})
+            nugget = "Only 5 players have hit .340+ in a season since 2000"
+            anomalies.append({"msg": f"Batting .{int(avg*1000)} — elite", "level": "alert", "nugget": nugget})
             comparisons.append({"stat": "AVG", "current": f".{int(avg*1000)}", "record": ".406", "holder": RECORDS["avg"]["holder"], "pct": round(avg / 0.406 * 100)})
 
         if hr_pace >= bat_season.get("hr_pace_alltime", 52):
-            anomalies.append({"msg": f"On pace for {int(hr_pace)} HRs — RECORD PACE", "level": "alltime"})
+            if hr_pace >= 62:
+                nugget = f"Would surpass Aaron Judge's 62 (2022) — only Bonds (73), McGwire (70, 65), and Sosa (66, 64, 63) have hit more"
+            else:
+                nugget = f"Only 7 players in MLB history have hit 55+ in a season"
+            anomalies.append({"msg": f"On pace for {int(hr_pace)} HRs — RECORD PACE", "level": "alltime", "nugget": nugget})
             comparisons.append({"stat": "HR Pace", "current": str(int(hr_pace)), "record": "73", "holder": RECORDS["hr"]["holder"], "pct": round(hr_pace / 73 * 100)})
             for n in RECORDS["hr"]["notable"]:
                 comparisons.append({"stat": "", "current": "", "record": str(n["val"]), "holder": n["holder"], "pct": round(hr_pace / n["val"] * 100)})
         elif hr_pace >= bat_season.get("hr_pace_anomalous", 39):
-            anomalies.append({"msg": f"On pace for {int(hr_pace)} HRs", "level": "alert"})
+            nugget = f"A 40+ HR season has only happened {'{'}~30 times since 2010{'}'}"
+            anomalies.append({"msg": f"On pace for {int(hr_pace)} HRs", "level": "alert", "nugget": nugget})
             comparisons.append({"stat": "HR Pace", "current": str(int(hr_pace)), "record": "73", "holder": RECORDS["hr"]["holder"], "pct": round(hr_pace / 73 * 100)})
 
         if rbi_pace >= 130:
-            anomalies.append({"msg": f"On pace for {int(rbi_pace)} RBI", "level": "alert"})
+            if rbi_pace >= 160:
+                nugget = "Hasn't been done since Manny Ramirez drove in 165 in 1999"
+            else:
+                nugget = "Last 140+ RBI season: Albert Pujols (2006)"
+            anomalies.append({"msg": f"On pace for {int(rbi_pace)} RBI", "level": "alert", "nugget": nugget})
             comparisons.append({"stat": "RBI Pace", "current": str(int(rbi_pace)), "record": "191", "holder": RECORDS["rbi"]["holder"], "pct": round(rbi_pace / 191 * 100)})
 
         if hits_pace >= 220:
             comparisons.append({"stat": "Hits Pace", "current": str(int(hits_pace)), "record": "262", "holder": RECORDS["hits"]["holder"], "pct": round(hits_pace / 262 * 100)})
             if hits_pace >= 240:
-                anomalies.append({"msg": f"On pace for {int(hits_pace)} hits — approaching Ichiro territory", "level": "alltime"})
+                anomalies.append({"msg": f"On pace for {int(hits_pace)} hits — approaching Ichiro territory", "level": "alltime", "nugget": "Only Ichiro (262 in 2004) and George Sisler (257 in 1920) have reached 240+"})
 
         if sb_pace >= 50:
             comparisons.append({"stat": "SB Pace", "current": str(int(sb_pace)), "record": "130", "holder": RECORDS["sb"]["holder"], "pct": round(sb_pace / 130 * 100)})
             if sb_pace >= 80:
-                anomalies.append({"msg": f"On pace for {int(sb_pace)} SB — historic speed", "level": "alltime"})
+                anomalies.append({"msg": f"On pace for {int(sb_pace)} SB — historic speed", "level": "alltime", "nugget": "Only Rickey Henderson (130, 108) and Vince Coleman (110, 107, 109) have stolen 80+ in a season"})
             elif sb_pace >= 50:
-                anomalies.append({"msg": f"On pace for {int(sb_pace)} SB", "level": "alert"})
+                anomalies.append({"msg": f"On pace for {int(sb_pace)} SB", "level": "alert", "nugget": "The stolen base leader has averaged ~45 since 2015"})
 
         # OPS anomaly
         ops = float(stats.get("ops", "0") or "0")
         if ops >= 1.100:
-            anomalies.append({"msg": f"{ops:.3f} OPS — ALL-TIME TERRITORY", "level": "alltime"})
+            anomalies.append({"msg": f"{ops:.3f} OPS — ALL-TIME TERRITORY", "level": "alltime", "nugget": "Only Bonds, Ruth, Williams, and Gehrig have posted a full-season OPS above 1.100"})
         elif ops >= 1.000:
-            anomalies.append({"msg": f"{ops:.3f} OPS — elite", "level": "alert"})
+            anomalies.append({"msg": f"{ops:.3f} OPS — elite", "level": "alert", "nugget": "Fewer than 5 players per season typically finish above 1.000 OPS"})
 
     elif games > 5 and group == "pitching":
         pitch_season = t.get("pitching_season", {})
@@ -269,38 +280,39 @@ def player_stats(player_id):
         w_pace = (w / games) * 162 if games else 0
 
         if era <= pitch_season.get("era_alltime", 1.8):
-            anomalies.append({"msg": f"{era:.2f} ERA — ALL-TIME TERRITORY", "level": "alltime"})
+            nugget = "Last sub-2.00 ERA season: Jacob deGrom (1.70 in 2018). Last sub-1.50: Dwight Gooden (1.53 in 1985)"
+            anomalies.append({"msg": f"{era:.2f} ERA — ALL-TIME TERRITORY", "level": "alltime", "nugget": nugget})
             comparisons.append({"stat": "ERA", "current": f"{era:.2f}", "record": "1.12", "holder": RECORDS["era"]["holder"], "pct": round((1 - era/4.50) / (1 - 1.12/4.50) * 100)})
             for n in RECORDS["era"]["notable"]:
                 comparisons.append({"stat": "", "current": "", "record": f"{n['val']:.2f}", "holder": n["holder"], "pct": 0})
         elif era <= pitch_season.get("era_anomalous", 2.5):
-            anomalies.append({"msg": f"{era:.2f} ERA — elite", "level": "alert"})
+            anomalies.append({"msg": f"{era:.2f} ERA — elite", "level": "alert", "nugget": "Typically only 2-3 qualified starters finish below 2.50 each season"})
             comparisons.append({"stat": "ERA", "current": f"{era:.2f}", "record": "1.12", "holder": RECORDS["era"]["holder"], "pct": round((1 - era/4.50) / (1 - 1.12/4.50) * 100)})
 
         if k_pace >= 250:
             comparisons.append({"stat": "K Pace", "current": str(int(k_pace)), "record": "383", "holder": RECORDS["k_season"]["holder"], "pct": round(k_pace / 383 * 100)})
             if k_pace >= 300:
-                anomalies.append({"msg": f"On pace for {int(k_pace)} K — historic strikeout rate", "level": "alltime"})
+                anomalies.append({"msg": f"On pace for {int(k_pace)} K — historic strikeout rate", "level": "alltime", "nugget": "Only Nolan Ryan (383), Sandy Koufax (382), and Randy Johnson (372) have reached 300+ K in a season"})
             else:
-                anomalies.append({"msg": f"On pace for {int(k_pace)} K", "level": "alert"})
+                anomalies.append({"msg": f"On pace for {int(k_pace)} K", "level": "alert", "nugget": "A 250+ K season is an ace-level achievement — happens ~5 times per year"})
 
         # WHIP check
         whip = float(stats.get("whip", "99") or "99")
         if whip <= 0.85 and games > 8:
-            anomalies.append({"msg": f"{whip:.2f} WHIP — ALL-TIME TERRITORY", "level": "alltime"})
+            anomalies.append({"msg": f"{whip:.2f} WHIP — ALL-TIME TERRITORY", "level": "alltime", "nugget": "The lowest full-season WHIP ever: Pedro Martinez (0.737 in 2000)"})
         elif whip <= 1.00 and games > 8:
-            anomalies.append({"msg": f"{whip:.2f} WHIP — elite", "level": "alert"})
+            anomalies.append({"msg": f"{whip:.2f} WHIP — elite", "level": "alert", "nugget": "Sub-1.00 WHIP is historically rare — only ~20 qualified seasons ever"})
 
         # K/9 check
         k9 = float(stats.get("strikeoutsPer9Inn", "0") or "0")
         if k9 >= 13.0:
-            anomalies.append({"msg": f"{k9:.1f} K/9 — historic dominance", "level": "alltime"})
+            anomalies.append({"msg": f"{k9:.1f} K/9 — historic dominance", "level": "alltime", "nugget": "The single-season K/9 record: Shane Bieber (14.2 in 2020, 60-game season). Full season: Gerrit Cole (13.8 in 2019)"})
         elif k9 >= 11.0:
-            anomalies.append({"msg": f"{k9:.1f} K/9 — elite", "level": "alert"})
+            anomalies.append({"msg": f"{k9:.1f} K/9 — elite", "level": "alert", "nugget": "11+ K/9 puts you in the top 1% of all starting pitchers historically"})
 
         # Win pace
         if w_pace >= 22 and games > 10:
-            anomalies.append({"msg": f"On pace for {int(w_pace)} wins", "level": "alert"})
+            anomalies.append({"msg": f"On pace for {int(w_pace)} wins", "level": "alert", "nugget": "Last 20+ win season: Justin Verlander (21 in 2011). Hasn't been common since the 1990s"})
             comparisons.append({"stat": "Win Pace", "current": str(int(w_pace)), "record": "27", "holder": RECORDS["wins"]["holder"], "pct": round(w_pace / 27 * 100)})
 
     return jsonify({

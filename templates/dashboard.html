@@ -399,7 +399,10 @@ async function loadPlayer(id) {
 
   // Anomalies
   if (d.anomalies && d.anomalies.length) {
-    d.anomalies.forEach(a => { html += `<div class="anomaly ${a.level}">${a.level==='alltime'?'👑 ':'🔥 '}${a.msg}</div>`; });
+    d.anomalies.forEach(a => {
+      html += `<div class="anomaly ${a.level}"><div>${a.level==='alltime'?'👑 ':'🔥 '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}
+      </div>`;
+    });
   }
 
   // Historical comparisons
