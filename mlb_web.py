@@ -264,15 +264,20 @@ def player_stats(player_id):
                    lambda: statsapi.player_stat_data(player_id, type="season"), ttl_seconds=60)
     stats = {}
     group = ""
+    is_pitcher = info.get("position", "") == "P"
+    preferred = "pitching" if is_pitcher else "hitting"
+    fallback = "hitting" if is_pitcher else "pitching"
     for sg in info.get("stats", []):
-        if sg["group"] == "hitting":
+        if sg["group"] == preferred:
             stats = sg.get("stats", {})
-            group = "hitting"
+            group = preferred
             break
-        elif sg["group"] == "pitching":
-            stats = sg.get("stats", {})
-            group = "pitching"
-            break
+    if not stats:
+        for sg in info.get("stats", []):
+            if sg["group"] == fallback:
+                stats = sg.get("stats", {})
+                group = fallback
+                break
 
     # Fetch game log and schedule in parallel
     recent_games = []
@@ -611,15 +616,20 @@ def player_career(player_id):
     info = statsapi.player_stat_data(player_id, type="career")
     stats = {}
     group = ""
+    is_pitcher = info.get("position", "") == "P"
+    preferred = "pitching" if is_pitcher else "hitting"
+    fallback = "hitting" if is_pitcher else "pitching"
     for sg in info.get("stats", []):
-        if sg["group"] == "hitting":
+        if sg["group"] == preferred:
             stats = sg.get("stats", {})
-            group = "hitting"
+            group = preferred
             break
-        elif sg["group"] == "pitching":
-            stats = sg.get("stats", {})
-            group = "pitching"
-            break
+    if not stats:
+        for sg in info.get("stats", []):
+            if sg["group"] == fallback:
+                stats = sg.get("stats", {})
+                group = fallback
+                break
 
     anomalies = []
     comparisons = []
@@ -1063,21 +1073,27 @@ def player_year_by_year(player_id):
     info = statsapi.player_stat_data(player_id, type="yearByYear")
     seasons = []
     group = ""
+    is_pitcher = info.get("position", "") == "P"
+    preferred = "pitching" if is_pitcher else "hitting"
     for sg in info.get("stats", []):
-        if sg["group"] == "hitting":
-            group = "hitting"
+        if sg["group"] == preferred:
+            group = preferred
             s = sg.get("stats", {})
             if s:
                 s["season"] = sg.get("season", "")
                 s["team"] = sg.get("team", "")
                 seasons.append(s)
-        elif sg["group"] == "pitching":
-            group = "pitching"
-            s = sg.get("stats", {})
-            if s:
-                s["season"] = sg.get("season", "")
-                s["team"] = sg.get("team", "")
-                seasons.append(s)
+    # Fallback if no preferred stats found
+    if not seasons:
+        fallback = "hitting" if is_pitcher else "pitching"
+        for sg in info.get("stats", []):
+            if sg["group"] == fallback:
+                group = fallback
+                s = sg.get("stats", {})
+                if s:
+                    s["season"] = sg.get("season", "")
+                    s["team"] = sg.get("team", "")
+                    seasons.append(s)
 
     # Flag standout seasons
     anomalies = []
