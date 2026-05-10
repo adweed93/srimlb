@@ -123,12 +123,13 @@ def team_stats(team_id):
             "score": f"{g.get('home_score',0)}-{g.get('away_score',0)}" if home else f"{g.get('away_score',0)}-{g.get('home_score',0)}",
             "won": (home and g.get("home_score", 0) > g.get("away_score", 0)) or (not home and g.get("away_score", 0) > g.get("home_score", 0)),
             "home": home,
+            "game_id": g.get("game_id"),
         })
 
     live = None
     for g in schedule:
         if g["status"] == "In Progress":
-            live = {"away": g["away_name"], "home": g["home_name"], "away_score": g.get("away_score", 0), "home_score": g.get("home_score", 0), "inning": g.get("current_inning", ""), "inning_state": g.get("inning_state", "")}
+            live = {"away": g["away_name"], "home": g["home_name"], "away_score": g.get("away_score", 0), "home_score": g.get("home_score", 0), "inning": g.get("current_inning", ""), "inning_state": g.get("inning_state", ""), "game_id": g.get("game_id")}
             break
 
     return jsonify({"record": record, "recent": recent, "live": live})

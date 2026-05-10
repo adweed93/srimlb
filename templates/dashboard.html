@@ -193,10 +193,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 
 <!-- Search Panel -->
 <div id="search" class="panel">
-  <div class="header"><h1>Search Players</h1></div>
+  <div class="header"><h1>Search</h1></div>
   <div class="search-container">
-    <div class="search-bar"><input id="global-search" placeholder="Search any MLB player..." onkeydown="if(event.key==='Enter')globalSearch()"></div>
-    <div class="search-btns"><button onclick="globalSearch()">Search</button></div>
+    <div class="search-bar"><input id="global-search" placeholder="Search players or teams..." onkeydown="if(event.key==='Enter')globalSearch('player')"></div>
+    <div class="search-btns"><button onclick="globalSearch('player')">Players</button><button onclick="globalSearch('team')">Teams</button></div>
   </div>
   <div id="global-results"></div>
 </div>
@@ -308,6 +308,10 @@ async function loadTeam(id) {
     html += `<div class="game-card"><div class="game-status"><span class="live-dot">●</span> LIVE — ${d.live.inning_state} ${d.live.inning}</div>
       <div class="team-row"><span class="team-name">${d.live.away}</span><span class="team-score">${d.live.away_score}</span></div>
       <div class="team-row"><span class="team-name">${d.live.home}</span><span class="team-score">${d.live.home_score}</span></div></div>`;
+    if (d.live.game_id) {
+      html += `<div class="player-card"><a href="https://www.mlb.com/gameday/${d.live.game_id}" target="_blank" style="display:block;padding:14px 16px;color:var(--blue);text-decoration:none;font-weight:600">📊 Live Box Score on MLB.com →</a>`;
+      html += `<a href="https://www.espn.com/mlb/boxscore/_/gameId/${d.live.game_id}" target="_blank" style="display:block;padding:14px 16px;border-top:1px solid var(--border);color:var(--blue);text-decoration:none;font-weight:600">📋 Live Box Score on ESPN →</a></div>`;
+    }
   }
   if (d.record.w !== undefined) {
     html += `<div class="record-bar">
@@ -319,22 +323,31 @@ async function loadTeam(id) {
   if (d.recent.length) {
     html += '<div class="section-header">Recent Games</div><div class="player-card">';
     d.recent.forEach(g => {
-      html += `<div class="game-log-item"><div class="result ${g.won?'W':'L'}">${g.won?'W':'L'}</div><div class="info"><div class="opp">${g.home?'vs':'@'} ${g.opponent}</div><div class="date">${g.date}</div></div><div class="score">${g.score}</div></div>`;
+      const links = g.game_id ? ` <a href="https://www.mlb.com/gameday/${g.game_id}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:11px">box→</a>` : '';
+      html += `<div class="game-log-item"><div class="result ${g.won?'W':'L'}">${g.won?'W':'L'}</div><div class="info"><div class="opp">${g.home?'vs':'@'} ${g.opponent}</div><div class="date">${g.date}</div></div><div class="score">${g.score}${links}</div></div>`;
     });
     html += '</div>';
   }
   document.getElementById('stats-content').innerHTML = html;
 }
 
-async function globalSearch() {
+function loadTeamFull(id, name) { loadTeam(id); }
+
+async function globalSearch(type) {
   const q = document.getElementById('global-search').value;
   if (!q) return;
   document.getElementById('global-results').innerHTML = '<div class="loading">Searching...</div>';
-  const r = await fetch(`/api/search/player?q=${encodeURIComponent(q)}`);
+  const r = await fetch(`/api/search/${type}?q=${encodeURIComponent(q)}`);
   const d = await r.json();
-  document.getElementById('global-results').innerHTML = d.map(p =>
-    `<div class="list-item" onclick="loadPlayer(${p.id})"><span class="list-icon">👤</span><div class="list-text"><div class="primary">${p.name}</div><div class="secondary">${p.team}</div></div></div>`
-  ).join('') || '<div class="empty-state"><div>No players found</div></div>';
+  if (type === 'player') {
+    document.getElementById('global-results').innerHTML = d.map(p =>
+      `<div class="list-item" onclick="loadPlayer(${p.id})"><span class="list-icon">👤</span><div class="list-text"><div class="primary">${p.name}</div><div class="secondary">${p.team}</div></div></div>`
+    ).join('') || '<div class="empty-state"><div>No players found</div></div>';
+  } else {
+    document.getElementById('global-results').innerHTML = d.map(t =>
+      `<div class="list-item" onclick="loadTeamFull(${t.id},'${t.name.replace(/'/g,"\\'")}')"><span class="list-icon">🏟️</span><div class="list-text"><div class="primary">${t.name}</div></div></div>`
+    ).join('') || '<div class="empty-state"><div>No teams found</div></div>';
+  }
 }
 
 async function loadPlayer(id) {
