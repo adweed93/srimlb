@@ -89,6 +89,7 @@ def live_games():
     for g in games:
         entry = {
             "away": g["away_name"], "home": g["home_name"],
+            "away_id": g.get("away_id"), "home_id": g.get("home_id"),
             "away_score": g.get("away_score", 0), "home_score": g.get("home_score", 0),
             "status": g["status"], "inning": g.get("current_inning", ""),
             "inning_state": g.get("inning_state", ""),

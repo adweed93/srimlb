@@ -213,6 +213,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 <script>
 let _currentPlayerId = null;
 
+const playerImg = (id, size=40) => `<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${id}/headshot/67/current" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;background:var(--border)" onerror="this.style.display='none'">`;
+const teamLogo = (id, size=24) => `<img src="https://www.mlbstatic.com/team-logos/${id}.svg" style="width:${size}px;height:${size}px" onerror="this.style.display='none'">`;
+
 function switchTab(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id===id));
   document.querySelectorAll('.nav-item').forEach((n,i) => {
@@ -257,8 +260,8 @@ function gameCard(g, status) {
 
   return `<div class="game-card">
     <div class="game-status"><span>${statusText}</span>${g.fav?'<span class="fav-badge">★ FAV</span>':''}</div>
-    <div class="team-row"><span class="team-name">${g.away}</span><span class="team-score ${status==='final'?(awayWin?'winner':'loser'):''}">${status!=='upcoming'?g.away_score:''}</span></div>
-    <div class="team-row"><span class="team-name">${g.home}</span><span class="team-score ${status==='final'?(homeWin?'winner':'loser'):''}">${status!=='upcoming'?g.home_score:''}</span></div>
+    <div class="team-row">${teamLogo(g.away_id)}<span class="team-name">${g.away}</span><span class="team-score ${status==='final'?(awayWin?'winner':'loser'):''}">${status!=='upcoming'?g.away_score:''}</span></div>
+    <div class="team-row">${teamLogo(g.home_id)}<span class="team-name">${g.home}</span><span class="team-score ${status==='final'?(homeWin?'winner':'loser'):''}">${status!=='upcoming'?g.home_score:''}</span></div>
   </div>`;
 }
 
@@ -267,10 +270,10 @@ async function loadFavorites() {
   const r = await fetch('/api/favorites');
   const d = await r.json();
   document.getElementById('fav-teams').innerHTML = d.teams.map(t =>
-    `<div class="list-item" onclick="loadTeam(${t.id})"><span class="list-icon">🏟️</span><div class="list-text"><div class="primary">${t.name}</div></div><button class="action" onclick="event.stopPropagation();removeFav('team',${t.id})">×</button></div>`
+    `<div class="list-item" onclick="loadTeam(${t.id})">${teamLogo(t.id, 28)}<div class="list-text" style="margin-left:10px"><div class="primary">${t.name}</div></div><button class="action" onclick="event.stopPropagation();removeFav('team',${t.id})">×</button></div>`
   ).join('') || '<div class="empty-state"><div>No teams added yet</div></div>';
   document.getElementById('fav-players').innerHTML = d.players.map(p =>
-    `<div class="list-item" onclick="loadPlayer(${p.id})"><span class="list-icon">👤</span><div class="list-text"><div class="primary">${p.name}</div></div><button class="action" onclick="event.stopPropagation();removeFav('player',${p.id})">×</button></div>`
+    `<div class="list-item" onclick="loadPlayer(${p.id})">${playerImg(p.id, 32)}<div class="list-text" style="margin-left:10px"><div class="primary">${p.name}</div></div><button class="action" onclick="event.stopPropagation();removeFav('player',${p.id})">×</button></div>`
   ).join('') || '<div class="empty-state"><div>No players added yet</div></div>';
 }
 
@@ -343,11 +346,11 @@ async function globalSearch(type) {
   const d = await r.json();
   if (type === 'player') {
     document.getElementById('global-results').innerHTML = d.map(p =>
-      `<div class="list-item" onclick="loadPlayer(${p.id})"><span class="list-icon">👤</span><div class="list-text"><div class="primary">${p.name}</div><div class="secondary">${p.team}</div></div></div>`
+      `<div class="list-item" onclick="loadPlayer(${p.id})">${playerImg(p.id, 36)}<div class="list-text" style="margin-left:10px"><div class="primary">${p.name}</div><div class="secondary">${p.team}</div></div></div>`
     ).join('') || '<div class="empty-state"><div>No players found</div></div>';
   } else {
     document.getElementById('global-results').innerHTML = d.map(t =>
-      `<div class="list-item" onclick="loadTeamFull(${t.id},'${t.name.replace(/'/g,"\\'")}')"><span class="list-icon">🏟️</span><div class="list-text"><div class="primary">${t.name}</div></div></div>`
+      `<div class="list-item" onclick="loadTeamFull(${t.id},'${t.name.replace(/'/g,"\\'")}')"><span style="margin-right:10px">${teamLogo(t.id, 30)}</span><div class="list-text"><div class="primary">${t.name}</div></div></div>`
     ).join('') || '<div class="empty-state"><div>No teams found</div></div>';
   }
 }
@@ -360,7 +363,7 @@ async function loadPlayer(id) {
   const d = await r.json();
   const s = d.stats;
   let html = filterTabs('season');
-  html += `<div class="player-card"><div class="player-header"><div class="name">${d.name}</div><div class="meta">${d.position} • ${d.team}</div></div>`;
+  html += `<div class="player-card"><div class="player-header" style="display:flex;align-items:center;gap:12px">${playerImg(id, 50)}<div><div class="name">${d.name}</div><div class="meta">${d.position} • ${d.team}</div></div></div>`;
 
   if (d.position !== 'P') {
     html += `<div class="stat-section-label">Slash Line</div><div class="stat-row">
@@ -486,7 +489,7 @@ async function loadPlayerFilter(type) {
     const r = await fetch(`/api/player/${_currentPlayerId}/career`);
     const d = await r.json();
     let html = filterTabs('career');
-    html += `<div class="player-card"><div class="player-header"><div class="name">${d.name}</div><div class="meta">${d.position} • Career Totals</div></div>`;
+    html += `<div class="player-card"><div class="player-header" style="display:flex;align-items:center;gap:12px">${playerImg(_currentPlayerId, 50)}<div><div class="name">${d.name}</div><div class="meta">${d.position} • Career Totals</div></div></div>`;
     html += buildStatDashboard(d.stats, d.position);
     html += '</div>';
     document.getElementById('stats-content').innerHTML = html;
@@ -516,7 +519,7 @@ function showYearDashboard() {
   const d = window._ybyData;
   const s = d.seasons.find(x => x.season === year);
   if (!s) return;
-  let html = `<div class="player-card"><div class="player-header"><div class="name">${d.name}</div><div class="meta">${d.position} • ${year} Season</div></div>`;
+  let html = `<div class="player-card"><div class="player-header" style="display:flex;align-items:center;gap:12px">${playerImg(_currentPlayerId, 50)}<div><div class="name">${d.name}</div><div class="meta">${d.position} • ${year} Season</div></div></div>`;
   html += buildStatDashboard(s, d.position);
   html += '</div>';
   document.getElementById('year-dashboard').innerHTML = html;
