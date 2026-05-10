@@ -536,12 +536,68 @@ def player_stats(player_id):
     anomaly_msgs = {a["msg"] for a in anomalies}
     insights = [i for i in insights if i["msg"] not in anomaly_msgs][:3]
 
+    # Bad stat anomalies — historically poor performances
+    red_flags = []
+    if games > 20 and group == "hitting":
+        avg = float(stats.get("avg", "0") or "0")
+        ops = float(stats.get("ops", "0") or "0")
+        k_rate = int(stats.get("strikeOuts", 0)) / max(int(stats.get("plateAppearances", 1) or 1), 1) * 100
+        hr = int(stats.get("homeRuns", 0))
+        hr_pace = (hr / games) * 162
+
+        if avg <= .180:
+            red_flags.append({"msg": f"Batting .{int(avg*1000)} — historically bad", "level": "terrible", "nugget": "The lowest full-season AVG ever by a qualifier: Rob Deer (.179 in 1991) and Chris Davis (.168 in 2018)"})
+        elif avg <= .200:
+            red_flags.append({"msg": f"Batting .{int(avg*1000)} — Mendoza Line territory", "level": "bad", "nugget": "Named after Mario Mendoza who hit around .200 — the unofficial threshold for being too bad to play"})
+        elif avg <= .220 and games > 30:
+            red_flags.append({"msg": f"Batting .{int(avg*1000)} — well below average", "level": "bad", "nugget": "MLB average is .245-.250. Sub-.220 over a full season is replacement-level offense"})
+
+        if ops <= .550 and games > 30:
+            red_flags.append({"msg": f"{ops:.3f} OPS — replacement level", "level": "terrible", "nugget": "An OPS below .600 is typically minor-league caliber. The 2018 Chris Davis posted a .539 OPS"})
+        elif ops <= .650 and games > 30:
+            red_flags.append({"msg": f"{ops:.3f} OPS — well below average", "level": "bad", "nugget": "League average OPS is .710-.720. Sub-.650 is bottom-10 in baseball"})
+
+        if k_rate >= 35 and games > 20:
+            red_flags.append({"msg": f"{k_rate:.1f}% K rate — extreme swing-and-miss", "level": "terrible", "nugget": "The highest full-season K rate: Patrick Wisdom (35.8% in 2022). Historically unsustainable"})
+        elif k_rate >= 30 and games > 20:
+            red_flags.append({"msg": f"{k_rate:.1f}% K rate — high strikeout rate", "level": "bad", "nugget": "Striking out 30%+ of the time makes it very hard to be productive. Only elite power can offset it"})
+
+        if hr_pace <= 5 and games > 40 and int(stats.get("plateAppearances", 0)) > 200:
+            red_flags.append({"msg": f"On pace for {int(hr_pace)} HR — no power", "level": "bad", "nugget": "For a full-time player, single-digit HR is below replacement-level power"})
+
+    elif games > 5 and group == "pitching":
+        era = float(stats.get("era", "99") or "99")
+        whip = float(stats.get("whip", "99") or "99")
+        bb9 = float(stats.get("walksPer9Inn", "0") or "0")
+        hr9 = float(stats.get("homeRunsPer9", "0") or "0")
+
+        if era >= 6.00 and games > 8:
+            red_flags.append({"msg": f"{era:.2f} ERA — historically bad", "level": "terrible", "nugget": "A 6.00+ ERA over significant innings is demotion territory. The worst qualified season ERA: Les Sweetland (7.71 in 1930)"})
+        elif era >= 5.00 and games > 8:
+            red_flags.append({"msg": f"{era:.2f} ERA — well below average", "level": "bad", "nugget": "League average ERA is 4.00-4.20. A 5.00+ ERA is back-of-rotation or worse"})
+
+        if whip >= 1.60 and games > 8:
+            red_flags.append({"msg": f"{whip:.2f} WHIP — too many baserunners", "level": "terrible", "nugget": "A WHIP above 1.60 means nearly 2 baserunners per inning — unsustainable for any role"})
+        elif whip >= 1.40 and games > 8:
+            red_flags.append({"msg": f"{whip:.2f} WHIP — below average", "level": "bad", "nugget": "League average WHIP is ~1.30. Above 1.40 puts constant pressure on the defense"})
+
+        if bb9 >= 5.0 and games > 8:
+            red_flags.append({"msg": f"{bb9:.1f} BB/9 — severe control issues", "level": "terrible", "nugget": "Walking 5+ per 9 innings is historically bad. The worst qualified BB/9: Tommy Byrne (8.4 in 1950)"})
+        elif bb9 >= 4.0 and games > 8:
+            red_flags.append({"msg": f"{bb9:.1f} BB/9 — poor command", "level": "bad", "nugget": "League average is ~3.2 BB/9. Walking 4+ per 9 makes it hard to pitch deep into games"})
+
+        if hr9 >= 2.0 and games > 8:
+            red_flags.append({"msg": f"{hr9:.1f} HR/9 — home run prone", "level": "terrible", "nugget": "Allowing 2+ HR per 9 innings is extreme. The worst qualified HR/9 seasons are around 2.1"})
+        elif hr9 >= 1.5 and games > 8:
+            red_flags.append({"msg": f"{hr9:.1f} HR/9 — giving up too many long balls", "level": "bad", "nugget": "League average is ~1.2 HR/9. Above 1.5 means the ball is leaving the yard too often"})
+
     return jsonify({
         "name": info.get("first_name", "") + " " + info.get("last_name", ""),
         "position": info.get("position", ""),
         "team": info.get("current_team", ""),
         "stats": stats,
         "anomalies": anomalies,
+        "red_flags": red_flags,
         "insights": insights,
         "comparisons": comparisons,
         "recent_games": recent_games[1:] if len(recent_games) > 1 else [],
@@ -948,11 +1004,52 @@ def player_career(player_id):
 
     milestones = milestones[:10]
 
+    # Career red flags — historically bad career stats
+    red_flags = []
+    if group == "hitting":
+        games = int(stats.get("gamesPlayed", 0))
+        avg = float(stats.get("avg", "0") or "0")
+        ops = float(stats.get("ops", "0") or "0")
+        ks = int(stats.get("strikeOuts", 0))
+        hr = int(stats.get("homeRuns", 0))
+        pa = int(stats.get("plateAppearances", 0) or 0)
+        k_rate = (ks / pa * 100) if pa > 0 else 0
+
+        if avg <= .230 and games >= 500:
+            red_flags.append({"msg": f".{int(avg*1000)} career AVG over {games} games", "level": "bad", "nugget": "A sub-.230 career average over 500+ games is well below the typical starter threshold"})
+        if ops <= .680 and games >= 500:
+            red_flags.append({"msg": f"{ops:.3f} career OPS — below average for a career", "level": "bad", "nugget": "A career OPS below .700 over 500+ games suggests a defense-first or bench player profile"})
+        if k_rate >= 28 and pa >= 2000:
+            red_flags.append({"msg": f"{k_rate:.1f}% career K rate — historically high", "level": "bad", "nugget": "Career K rates above 28% are among the highest ever. Adam Dunn (32.0%) and Mark Reynolds (31.5%) are the all-time leaders"})
+        if ks >= 2000:
+            red_flags.append({"msg": f"{ks} career strikeouts", "level": "bad", "nugget": f"Reggie Jackson holds the career record with 2,597 K. High strikeouts don't preclude greatness but show swing-and-miss"})
+        elif ks >= 1500 and games < 1500:
+            red_flags.append({"msg": f"{ks} K in only {games} games — high K accumulation", "level": "bad", "nugget": "Accumulating strikeouts faster than games played is an extreme whiff rate"})
+
+    elif group == "pitching":
+        era = float(stats.get("era", "99") or "99")
+        ip = float(stats.get("inningsPitched", "0").replace(",", "") or "0")
+        whip = float(stats.get("whip", "99") or "99")
+        wins = int(stats.get("wins", 0))
+        losses = int(stats.get("losses", 0))
+        hr_allowed = int(stats.get("homeRuns", 0))
+
+        if era >= 4.50 and ip >= 1000:
+            red_flags.append({"msg": f"{era:.2f} career ERA over {int(ip)} IP", "level": "bad", "nugget": "A career ERA above 4.50 over 1000+ IP suggests a back-of-rotation or long-relief career"})
+        if whip >= 1.40 and ip >= 1000:
+            red_flags.append({"msg": f"{whip:.2f} career WHIP — too many baserunners", "level": "bad", "nugget": "A career WHIP above 1.40 means constant traffic on the bases"})
+        if losses >= 200:
+            red_flags.append({"msg": f"{losses} career losses", "level": "bad", "nugget": f"Only pitchers with very long careers accumulate 200+ losses. Nolan Ryan (292) and Gaylord Perry (265) lead all-time"})
+        if wins > 0 and losses > 0 and (wins / (wins + losses)) < .450 and (wins + losses) >= 200:
+            pct = wins / (wins + losses)
+            red_flags.append({"msg": f".{int(pct*1000)} career win percentage", "level": "bad", "nugget": "A sub-.450 win% over 200+ decisions often reflects pitching for bad teams or inconsistency"})
+
     return jsonify({
         "name": info.get("first_name", "") + " " + info.get("last_name", ""),
         "position": info.get("position", ""),
         "stats": stats,
         "anomalies": anomalies,
+        "red_flags": red_flags,
         "comparisons": comparisons,
         "pace_comps": pace_comps,
         "seasons_played": seasons_played,
