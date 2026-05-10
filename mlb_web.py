@@ -164,6 +164,7 @@ def live_games():
             "inning_state": g.get("inning_state", ""),
             "fav": g.get("home_id") in fav_ids or g.get("away_id") in fav_ids,
             "game_id": g.get("game_id"),
+            "game_time": g.get("game_datetime", ""),
         }
         if g["status"] == "In Progress":
             result["live"].append(entry)
@@ -171,6 +172,29 @@ def live_games():
             result["final"].append(entry)
         else:
             result["upcoming"].append(entry)
+    return jsonify(result)
+
+
+@app.route("/api/upcoming")
+def upcoming_games():
+    """Get all scheduled games for the next 2 weeks."""
+    from datetime import date
+    start = date.today() + timedelta(days=1)
+    end = start + timedelta(days=13)
+    games = statsapi.schedule(start_date=start.strftime("%m/%d/%Y"), end_date=end.strftime("%m/%d/%Y"))
+    fav_ids = {t["id"] for t in load_favorites().get("teams", [])}
+    result = []
+    for g in games:
+        if g["status"] in ("Final", "In Progress"):
+            continue
+        result.append({
+            "away": g["away_name"], "home": g["home_name"],
+            "away_id": g.get("away_id"), "home_id": g.get("home_id"),
+            "game_time": g.get("game_datetime", ""),
+            "game_date": g.get("game_date", ""),
+            "fav": g.get("home_id") in fav_ids or g.get("away_id") in fav_ids,
+            "game_id": g.get("game_id"),
+        })
     return jsonify(result)
 
 

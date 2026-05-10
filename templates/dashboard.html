@@ -242,16 +242,31 @@ async function loadScores() {
     d.live.forEach(g => { html += gameCard(g, 'live'); });
   }
   if (d.upcoming.length) {
-    html += '<div class="section-header">Upcoming</div>';
+    html += '<div class="section-header">Upcoming Today</div>';
     d.upcoming.forEach(g => { html += gameCard(g, 'upcoming'); });
   }
   if (d.final.length) {
     html += '<div class="section-header">Final</div>';
     d.final.forEach(g => { html += gameCard(g, 'final'); });
   }
-  if (!html) html = '<div class="empty-state"><div class="icon">📅</div><div class="title">No Games Today</div></div>';
-  html += '<div style="padding:12px;text-align:center"><button class="pill-btn outline" onclick="loadHistoricalGames()">📅 Browse Past 2 Weeks</button></div>';
+  if (!d.live.length && !d.upcoming.length && !d.final.length) html = '<div class="empty-state"><div class="icon">📅</div><div class="title">No Games Today</div></div>';
+
+  // Next 3 upcoming games (future days)
+  html += '<div class="section-header">Coming Up Next</div><div id="upcoming-preview"><div class="empty-state"><div class="icon">⏳</div><div>Loading...</div></div></div>';
+  html += '<div style="padding:12px;text-align:center"><button class="pill-btn outline" onclick="loadAllUpcoming()">📅 See All Upcoming (2 Weeks)</button>&nbsp;<button class="pill-btn outline" onclick="loadHistoricalGames()">📅 Past 2 Weeks</button></div>';
   document.getElementById('scores-content').innerHTML = html;
+
+  // Fetch next 3 async
+  fetch('/api/upcoming').then(r=>r.json()).then(games => {
+    const preview = games.slice(0, 3);
+    let ph = '';
+    if (preview.length) {
+      preview.forEach(g => { ph += upcomingCard(g); });
+    } else {
+      ph = '<div class="empty-state"><div>No upcoming games scheduled</div></div>';
+    }
+    document.getElementById('upcoming-preview').innerHTML = ph;
+  });
 }
 
 async function loadHistoricalGames() {
@@ -290,6 +305,37 @@ function gameCard(g, status) {
     <div class="team-row">${teamLogo(g.away_id)}<span class="team-name">${g.away}</span><span class="team-score ${status==='final'?(awayWin?'winner':'loser'):''}">${status!=='upcoming'?g.away_score:''}</span></div>
     <div class="team-row">${teamLogo(g.home_id)}<span class="team-name">${g.home}</span><span class="team-score ${status==='final'?(homeWin?'winner':'loser'):''}">${status!=='upcoming'?g.home_score:''}</span></div>
   </div>`;
+}
+
+function upcomingCard(g) {
+  const dt = g.game_time ? new Date(g.game_time) : null;
+  const dateStr = dt ? dt.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) : g.game_date || '';
+  const timeStr = dt ? dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : 'TBD';
+  return `<div class="game-card">
+    <div class="game-status"><span>📅 ${dateStr} • ${timeStr}</span>${g.fav?'<span class="fav-badge">★ FAV</span>':''}</div>
+    <div class="team-row">${teamLogo(g.away_id)}<span class="team-name">${g.away}</span></div>
+    <div class="team-row">${teamLogo(g.home_id)}<span class="team-name">${g.home}</span></div>
+  </div>`;
+}
+
+async function loadAllUpcoming() {
+  document.getElementById('scores-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading upcoming games...</div></div>';
+  const r = await fetch('/api/upcoming');
+  const games = await r.json();
+  let html = '<div class="section-header">Upcoming Games — Next 2 Weeks</div>';
+  let currentDate = '';
+  games.forEach(g => {
+    const dt = g.game_time ? new Date(g.game_time) : null;
+    const dateStr = dt ? dt.toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'}) : g.game_date || '';
+    if (dateStr !== currentDate) {
+      currentDate = dateStr;
+      html += `<div class="section-header" style="padding-top:12px">${dateStr}</div>`;
+    }
+    html += upcomingCard(g);
+  });
+  if (!games.length) html += '<div class="empty-state"><div>No upcoming games scheduled</div></div>';
+  html += '<div style="padding:12px;text-align:center"><button class="pill-btn outline" onclick="loadScores()">← Back to Today</button></div>';
+  document.getElementById('scores-content').innerHTML = html;
 }
 
 // Favorites
