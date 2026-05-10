@@ -429,6 +429,14 @@ async function loadPlayer(id) {
     });
   }
 
+  // Insights (always show 2-3 contextual nuggets)
+  if (d.insights && d.insights.length) {
+    html += '<div class="section-header">Insights</div>';
+    d.insights.forEach(i => {
+      html += `<div class="anomaly alert" style="border-left-color:var(--muted)"><div>📌 ${i.msg}</div><div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${i.nugget}</div></div>`;
+    });
+  }
+
   // Historical comparisons
   if (d.comparisons && d.comparisons.length) {
     html += '<div class="section-header">vs. Historical Records</div><div class="player-card">';
