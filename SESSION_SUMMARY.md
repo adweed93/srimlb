@@ -173,3 +173,37 @@
 - Each red flag includes historical comparison nuggets (e.g., "Chris Davis hit .168 in 2018 — the worst ever for a qualified hitter")
 - Two severity levels: `terrible` (🚨 red) and `bad` (⚠️ orange) with distinct CSS styling
 - **Commits**: `3738c61`, `909aab9`, `ccf2b4c`
+
+
+### Bugfix: Pitcher Stats Showing Batting Data
+- **Problem**: Pitchers were displaying their batting stats instead of pitching stats on all views
+- **Root Cause**: `statsapi.player_stat_data()` returns both hitting and pitching stat groups. Code checked `hitting` first with a `break`, so pitchers always got batting stats.
+- **Fix**: All three endpoints (season, career, yearByYear) now check `info.get("position") == "P"` and prioritize the `pitching` group, with `hitting` as fallback
+- **Commit**: `39d58da`
+
+### Bugfix: Year-by-Year Duplicate/Unordered Seasons
+- **Problem**: Dropdown had duplicate years and out-of-order entries
+- **Root Cause**: Mid-season trades create multiple entries per year; API doesn't guarantee order
+- **Fix**: Seasons sorted chronologically; mid-season trade splits kept separate with unique `_key` identifiers
+- **Commits**: `bb20aed`, `1d5c743`
+
+### Enhancement: Pitcher Stat Dashboard (4 Sections)
+- Expanded pitcher layout to match batter dashboard depth:
+  - **Core**: ERA, W-L, WHIP, IP, G, GS, W%, ER
+  - **Strikeouts & Walks**: K, BB, K/BB, K/9, BB/9, HBP
+  - **Batted Ball**: H, HR, BAA, OBP Against, H/9, HR/9
+  - **Durability & Extras**: CG, SHO, SV, HLD, WP, BF
+- Applied to both the season view inline rendering and the shared `buildStatDashboard()` function (career + yearByYear)
+- **Commit**: `d65f831`
+
+### Enhancement: Year-by-Year Team Context
+- Dropdown now shows team name per entry: `2022 — Los Angeles Angels`
+- Mid-season trades show as separate selectable entries
+- Team logo (from mlbstatic.com) displays in the stat header per selection
+- Anomalies and red flags keyed to specific team entry (not just year)
+- **Commits**: `506b6c5`, `1d5c743`
+
+### Feature: README.md
+- Full project documentation added to GitHub
+- Covers all features, tech stack, project structure, how to run locally, dependencies, and historical comparison data sources
+- **Commit**: `e468470`
