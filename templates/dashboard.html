@@ -597,6 +597,14 @@ async function loadPlayerFilter(type) {
       });
       html += '</div>';
     }
+    // Career milestones checklist
+    if (d.milestones && d.milestones.length) {
+      html += '<div class="section-header">Career Milestones ✓</div><div class="player-card">';
+      d.milestones.forEach(m => {
+        html += `<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start"><span style="color:var(--green);font-size:18px">✓</span><div><div style="font-weight:600;font-size:13px">${m.stat}</div>${m.note?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${m.note}</div>`:''}</div></div>`;
+      });
+      html += '</div>';
+    }
     document.getElementById('stats-content').innerHTML = html;
   } else {
     // yearByYear - fetch and show dropdown

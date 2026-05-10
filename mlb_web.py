@@ -799,6 +799,155 @@ def player_career(player_id):
         pace_comps.sort(key=lambda x: (not x["ahead"], x["diff"]))
         pace_comps = pace_comps[:6]  # Top 6 most relevant
 
+    # Career milestones checklist — top 10 achievements with context
+    milestones = []
+    if group == "hitting":
+        hr = int(stats.get("homeRuns", 0))
+        hits = int(stats.get("hits", 0))
+        rbi = int(stats.get("rbi", 0))
+        runs = int(stats.get("runs", 0))
+        sb = int(stats.get("stolenBases", 0))
+        doubles = int(stats.get("doubles", 0))
+        bb = int(stats.get("baseOnBalls", 0))
+        games = int(stats.get("gamesPlayed", 0))
+        avg = float(stats.get("avg", "0") or "0")
+        tb = int(stats.get("totalBases", 0))
+
+        hr_milestones = [(700, "700 HR — only Bonds (762), Aaron (755), Ruth (714) have done it"),
+                         (600, "600 HR — inner circle power, only 9 players ever"),
+                         (500, "500 HR Club — automatic Hall of Fame territory"),
+                         (400, "400 HR — elite career power, ~55 players all-time"),
+                         (300, "300 HR — franchise-caliber slugger"),
+                         (200, "200 HR — established power hitter"),
+                         (100, "100 HR — crossed triple digits")]
+        for thresh, desc in hr_milestones:
+            if hr >= thresh:
+                note = f"in {seasons_played} seasons" if seasons_played else ""
+                speed = ""
+                if seasons_played and thresh >= 100:
+                    pace = thresh / seasons_played if seasons_played else 0
+                    if thresh == 500 and seasons_played <= 14: speed = " — faster than average (typically takes 16-18 seasons)"
+                    elif thresh == 300 and seasons_played <= 9: speed = " — ahead of most HOFers at this point"
+                    elif thresh == 100 and seasons_played <= 3: speed = " — blazing fast start"
+                milestones.append({"stat": f"⚾ {desc}", "note": f"Reached {note}{speed}"})
+                break
+
+        hit_milestones = [(3000, "3,000 Hits — only 33 players in history, near-certain HOF"),
+                          (2500, "2,500 Hits — on the doorstep of 3,000"),
+                          (2000, "2,000 Hits — sustained excellence over a long career"),
+                          (1500, "1,500 Hits — established veteran"),
+                          (1000, "1,000 Hits — four-digit hit club")]
+        for thresh, desc in hit_milestones:
+            if hits >= thresh:
+                speed = ""
+                if seasons_played:
+                    if thresh == 2000 and seasons_played <= 12: speed = " — faster than most HOFers"
+                    elif thresh == 1000 and seasons_played <= 6: speed = " — elite hit accumulation rate"
+                milestones.append({"stat": f"🎯 {desc}", "note": f"Reached in {seasons_played} seasons{speed}" if seasons_played else ""})
+                break
+
+        rbi_milestones = [(1500, "1,500 RBI — all-time run producer, fewer than 30 ever"),
+                          (1000, "1,000 RBI — elite career production"),
+                          (500, "500 RBI — significant career milestone")]
+        for thresh, desc in rbi_milestones:
+            if rbi >= thresh:
+                speed = ""
+                if seasons_played and thresh == 1000 and seasons_played <= 12: speed = " — ahead of pace for most greats"
+                milestones.append({"stat": f"💪 {desc}", "note": f"Reached in {seasons_played} seasons{speed}" if seasons_played else ""})
+                break
+
+        if runs >= 1500:
+            milestones.append({"stat": "🏃 1,500 Runs Scored — all-time elite", "note": "Fewer than 30 players have scored 1,500+ runs"})
+        elif runs >= 1000:
+            milestones.append({"stat": "🏃 1,000 Runs Scored — consistent producer", "note": f"In {seasons_played} seasons" if seasons_played else ""})
+
+        if sb >= 500:
+            milestones.append({"stat": "💨 500 SB — all-time speed legend", "note": "Only 15 players have stolen 500+ bases"})
+        elif sb >= 300:
+            milestones.append({"stat": "💨 300 SB — elite career baserunner", "note": f"In {seasons_played} seasons" if seasons_played else ""})
+        elif sb >= 100:
+            milestones.append({"stat": "💨 100 SB — significant speed weapon", "note": ""})
+
+        if doubles >= 600:
+            milestones.append({"stat": "2️⃣ 600 Doubles — all-time doubles leader territory", "note": "Only Tris Speaker (792) and Pete Rose (746) have more than 650"})
+        elif doubles >= 400:
+            milestones.append({"stat": "2️⃣ 400 Doubles — gap-to-gap excellence", "note": "Fewer than 100 players have reached 400 career doubles"})
+
+        if bb >= 1500:
+            milestones.append({"stat": "👁️ 1,500 Walks — all-time plate discipline", "note": "Only Bonds, Henderson, Ruth, and a handful of others"})
+        elif bb >= 1000:
+            milestones.append({"stat": "👁️ 1,000 Walks — elite eye at the plate", "note": ""})
+
+        if avg >= .320 and games >= 1000:
+            milestones.append({"stat": f"📊 .{int(avg*1000)} Career AVG over {games} games", "note": "Maintaining .320+ over a full career is historically rare"})
+        elif avg >= .300 and games >= 500:
+            milestones.append({"stat": f"📊 .{int(avg*1000)} Career AVG — .300 career hitter", "note": "Increasingly rare in the modern era"})
+
+        if tb >= 5000:
+            milestones.append({"stat": "🔥 5,000 Total Bases — all-time accumulation", "note": "Only Aaron (6,856), Musial (6,134), Mays (6,066) and a few others"})
+        elif tb >= 3000:
+            milestones.append({"stat": "🔥 3,000 Total Bases — sustained power + contact", "note": ""})
+
+    elif group == "pitching":
+        wins = int(stats.get("wins", 0))
+        ks = int(stats.get("strikeOuts", 0))
+        ip = float(stats.get("inningsPitched", "0").replace(",", "") or "0")
+        saves = int(stats.get("saves", 0))
+        shutouts = int(stats.get("shutouts", 0))
+        cg = int(stats.get("completeGames", 0))
+        era = float(stats.get("era", "99") or "99")
+        games = int(stats.get("gamesPlayed", 0))
+
+        k_milestones = [(4000, "4,000 K — only Nolan Ryan (5,714) and Randy Johnson (4,875)"),
+                        (3000, "3,000 K Club — only 18 pitchers in history"),
+                        (2000, "2,000 K — dominant career strikeout pitcher"),
+                        (1000, "1,000 K — established strikeout arm")]
+        for thresh, desc in k_milestones:
+            if ks >= thresh:
+                speed = ""
+                if seasons_played:
+                    if thresh == 3000 and seasons_played <= 15: speed = " — faster than most who reached it"
+                    elif thresh == 1000 and seasons_played <= 5: speed = " — elite K rate early in career"
+                milestones.append({"stat": f"🔥 {desc}", "note": f"Reached in {seasons_played} seasons{speed}" if seasons_played else ""})
+                break
+
+        win_milestones = [(300, "300 Wins — only 24 pitchers ever, likely unreachable today"),
+                          (200, "200 Wins — once the HOF standard for pitchers"),
+                          (100, "100 Wins — established starter")]
+        for thresh, desc in win_milestones:
+            if wins >= thresh:
+                speed = ""
+                if seasons_played and thresh == 200 and seasons_played <= 13: speed = " — ahead of typical pace"
+                milestones.append({"stat": f"🏆 {desc}", "note": f"Reached in {seasons_played} seasons{speed}" if seasons_played else ""})
+                break
+
+        if saves >= 400:
+            milestones.append({"stat": "💾 400 Saves — all-time closer elite", "note": "Only Rivera (652), Hoffman (601), Lee Smith (478), and a few others"})
+        elif saves >= 200:
+            milestones.append({"stat": "💾 200 Saves — established closer", "note": ""})
+
+        if shutouts >= 40:
+            milestones.append({"stat": f"🚫 {shutouts} Shutouts — all-time dominance", "note": "Extremely rare in the modern era"})
+        elif shutouts >= 20:
+            milestones.append({"stat": f"🚫 {shutouts} Shutouts — significant career total", "note": ""})
+
+        if cg >= 100:
+            milestones.append({"stat": f"💪 {cg} Complete Games — workhorse era", "note": "100+ CG is virtually impossible in modern baseball"})
+        elif cg >= 30:
+            milestones.append({"stat": f"💪 {cg} Complete Games", "note": "Rare in the modern bullpen era"})
+
+        if ip >= 3000:
+            milestones.append({"stat": "📏 3,000+ Innings Pitched — iron man durability", "note": "Fewer than 100 pitchers have thrown 3,000+ career IP"})
+        elif ip >= 2000:
+            milestones.append({"stat": "📏 2,000+ Innings Pitched — sustained workhorse", "note": ""})
+
+        if era <= 3.00 and ip >= 1500:
+            milestones.append({"stat": f"📊 {era:.2f} Career ERA over {int(ip)} IP", "note": "Sub-3.00 career ERA with 1500+ IP is Hall of Fame caliber"})
+        elif era <= 3.50 and ip >= 1000:
+            milestones.append({"stat": f"📊 {era:.2f} Career ERA over {int(ip)} IP", "note": "Consistently above-average over a long career"})
+
+    milestones = milestones[:10]
+
     return jsonify({
         "name": info.get("first_name", "") + " " + info.get("last_name", ""),
         "position": info.get("position", ""),
@@ -807,6 +956,7 @@ def player_career(player_id):
         "comparisons": comparisons,
         "pace_comps": pace_comps,
         "seasons_played": seasons_played,
+        "milestones": milestones,
     })
 
 
