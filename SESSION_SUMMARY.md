@@ -134,3 +134,42 @@
 - Neon glow effects: text-shadow on active nav, box-shadow on W/L badges, progress bar glow
 - Search input gets green glow on focus
 - **Commit**: `ae54d5d`
+
+### Feature: Fuzzy Search for Players and Teams
+- **Player search** (`/api/search/player`): Now tries `statsapi.lookup_player()` first, falls back to `pybaseball.playerid_lookup(fuzzy=True)` for typo tolerance (e.g., "Otta" → "Ohtani")
+- **Team search** (`/api/search/team`): Now tries `statsapi.lookup_team()` first, falls back to `difflib.get_close_matches()` against all MLB team names, abbreviations, and short names
+- **Commits**: `11af303`, `48cb781`
+
+### Feature: Anomalies & Comparisons on Career and Year-by-Year Views
+- **Career view** now includes:
+  - Anomaly banners for career milestones (500 HR Club, 3000 Hits, 300 Wins, career .300+ AVG, sub-3.00 ERA, etc.)
+  - Progress bars comparing career totals against all-time records (e.g., "Career HR: 555 — 73% of Barry Bonds' 762")
+- **Year-by-year view** now includes:
+  - Per-season flags when selecting a standout year (50-HR, .350+ AVG, sub-2.00 ERA, 300-K, 20-win seasons)
+  - Each flag has a contextual nugget explaining historical significance
+- All thresholds are time-frame-appropriate (career vs single-season benchmarks)
+- **Commit**: `48bb236`
+
+### Feature: HOF Career-Pace Comparisons
+- Career view shows "HOF Pace Check" section comparing player's stats to Hall of Famers at the same career point
+- Curated cumulative data for 9 hitters (Bonds, Aaron, Mays, Ruth, Mantle, Williams, Trout, Griffey Jr., Pujols) and 8 pitchers (Ryan, R. Johnson, Pedro, Maddux, Kershaw, Koufax, Gibson, W. Johnson)
+- Bracket-matched at 3/5/7/10/15 seasons — young players get compared to where greats were at that same stage
+- Shows green (ahead) or blue (behind) with exact differential
+- Only shows comparisons where player is within 75% of the HOF great's pace
+- **Commit**: `7ddc323`
+
+### Feature: Career Milestones Checklist
+- Career view shows up to 10 best career milestones with ✓ checkmarks
+- Hitter milestones: HR (100-700), Hits (1000-3000), RBI (500-1500), Runs (1000-1500), SB (100-500), Doubles (400-600), Walks (1000-1500), Career AVG (.300+/.320+), Total Bases (3000-5000)
+- Pitcher milestones: K (1000-4000), Wins (100-300), Saves (200-400), Shutouts (20-40), CG (30-100), IP (2000-3000), Career ERA
+- Notes when milestones were reached quickly (e.g., "Reached in 5 seasons — blazing fast start")
+- **Commit**: `4f77705`
+
+### Feature: Red Flags Section (Bad Stats with Historical Comparisons)
+- Added a separate "🚩 Red Flags" section alongside "🔥 Anomalies" on all three views (Season, Career, Year-by-Year)
+- **Season red flags**: sub-.200 AVG, sub-.600 OPS, 35%+ K rate, 6.00+ ERA, 1.60+ WHIP, 5.0+ BB/9, 2.0+ HR/9
+- **Career red flags**: sub-.230 career AVG, sub-.680 OPS, 28%+ career K rate, 2000+ career K, 4.50+ ERA, 1.40+ WHIP, sub-.450 win%, 200+ losses
+- **Year-by-year red flags**: same single-season thresholds applied per year
+- Each red flag includes historical comparison nuggets (e.g., "Chris Davis hit .168 in 2018 — the worst ever for a qualified hitter")
+- Two severity levels: `terrible` (🚨 red) and `bad` (⚠️ orange) with distinct CSS styling
+- **Commits**: `3738c61`, `909aab9`, `ccf2b4c`
