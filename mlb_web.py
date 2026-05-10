@@ -279,6 +279,123 @@ def player_stats(player_id):
     })
 
 
+@app.route("/api/player/<int:player_id>/career")
+def player_career(player_id):
+    """Get career stats for a player."""
+    info = statsapi.player_stat_data(player_id, type="career")
+    stats = {}
+    for sg in info.get("stats", []):
+        if sg["group"] in ("hitting", "pitching"):
+            stats = sg.get("stats", {})
+            break
+    return jsonify({
+        "name": info.get("first_name", "") + " " + info.get("last_name", ""),
+        "position": info.get("position", ""),
+        "stats": stats,
+    })
+
+
+@app.route("/api/player/<int:player_id>/yearByYear")
+def player_year_by_year(player_id):
+    """Get year-by-year historical stats."""
+    info = statsapi.player_stat_data(player_id, type="yearByYear")
+    seasons = []
+    for sg in info.get("stats", []):
+        if sg["group"] in ("hitting", "pitching"):
+            s = sg.get("stats", {})
+            if s:
+                seasons.append(s)
+    return jsonify({
+        "name": info.get("first_name", "") + " " + info.get("last_name", ""),
+        "position": info.get("position", ""),
+        "seasons": seasons,
+    })
+
+
+@app.route("/api/player/<int:player_id>/statcast")
+def player_statcast(player_id):
+    """Get Statcast advanced metrics via pybaseball."""
+    try:
+        from pybaseball import statcast_batter, statcast_pitcher, playerid_reverse_lookup
+        import pandas as pd
+
+        # Lookup the player's MLB key to get their MLBAM ID (same as player_id)
+        # statcast uses the same MLB ID
+        from datetime import timedelta
+        start = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        end = datetime.now().strftime("%Y-%m-%d")
+
+        # Determine if batter or pitcher
+        info = statsapi.player_stat_data(player_id, type="season")
+        position = info.get("position", "")
+
+        if position == "P":
+            df = statcast_pitcher(start, end, player_id)
+        else:
+            df = statcast_batter(start, end, player_id)
+
+        if df is None or df.empty:
+            return jsonify({"metrics": {}, "available": False})
+
+        metrics = {}
+        if position != "P":
+            # Batter Statcast metrics
+            batted = df[df["launch_speed"].notna()]
+            if not batted.empty:
+                metrics["avg_exit_velo"] = round(batted["launch_speed"].mean(), 1)
+                metrics["max_exit_velo"] = round(batted["launch_speed"].max(), 1)
+                metrics["avg_launch_angle"] = round(batted["launch_angle"].mean(), 1)
+                metrics["barrel_pct"] = round((batted["launch_speed_angle"].eq(6).sum() / len(batted)) * 100, 1) if "launch_speed_angle" in batted.columns else None
+                metrics["hard_hit_pct"] = round((batted["launch_speed"] >= 95).sum() / len(batted) * 100, 1)
+            if "bat_speed" in df.columns:
+                bat_speed = df["bat_speed"].dropna()
+                if not bat_speed.empty:
+                    metrics["avg_bat_speed"] = round(bat_speed.mean(), 1)
+                    metrics["max_bat_speed"] = round(bat_speed.max(), 1)
+            if "sprint_speed" in df.columns:
+                sprint = df["sprint_speed"].dropna()
+                if not sprint.empty:
+                    metrics["sprint_speed"] = round(sprint.mean(), 1)
+            # xBA, xSLG if available
+            if "estimated_ba_using_speedangle" in df.columns:
+                xba = df["estimated_ba_using_speedangle"].dropna()
+                if not xba.empty:
+                    metrics["xBA"] = round(xba.mean(), 3)
+            if "estimated_slg_using_speedangle" in df.columns:
+                xslg = df["estimated_slg_using_speedangle"].dropna()
+                if not xslg.empty:
+                    metrics["xSLG"] = round(xslg.mean(), 3)
+            metrics["total_batted_balls"] = len(batted)
+        else:
+            # Pitcher Statcast metrics
+            if "release_speed" in df.columns:
+                velo = df["release_speed"].dropna()
+                if not velo.empty:
+                    metrics["avg_velo"] = round(velo.mean(), 1)
+                    metrics["max_velo"] = round(velo.max(), 1)
+            if "release_spin_rate" in df.columns:
+                spin = df["release_spin_rate"].dropna()
+                if not spin.empty:
+                    metrics["avg_spin_rate"] = int(spin.mean())
+            batted = df[df["launch_speed"].notna()]
+            if not batted.empty:
+                metrics["avg_exit_velo_against"] = round(batted["launch_speed"].mean(), 1)
+                metrics["hard_hit_pct_against"] = round((batted["launch_speed"] >= 95).sum() / len(batted) * 100, 1)
+            if "estimated_ba_using_speedangle" in df.columns:
+                xba = df["estimated_ba_using_speedangle"].dropna()
+                if not xba.empty:
+                    metrics["xBA_against"] = round(xba.mean(), 3)
+            # Pitch mix
+            if "pitch_type" in df.columns:
+                mix = df["pitch_type"].value_counts(normalize=True).head(5).to_dict()
+                metrics["pitch_mix"] = {k: round(v * 100, 1) for k, v in mix.items()}
+            metrics["total_pitches"] = len(df)
+
+        return jsonify({"metrics": metrics, "available": True})
+    except Exception as e:
+        return jsonify({"metrics": {}, "available": False, "error": str(e)})
+
+
 @app.route("/api/notifications")
 def notifications():
     favs = load_favorites()
