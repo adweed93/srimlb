@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+mlb_thresholds_cache.json
+mlb_notifications.json
+mlb_last_run.json

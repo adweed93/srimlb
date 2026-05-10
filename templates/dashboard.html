@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d1117">
+<title>MLB Dashboard</title>
+<style>
+:root { --bg: #0d1117; --card: #161b22; --border: #21262d; --accent: #e94560; --gold: #ffd700; --green: #3fb950; --red: #f85149; --text: #e6edf3; --muted: #8b949e; --blue: #58a6ff; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 70px; }
+
+/* Bottom Nav - ESPN style */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: var(--card); border-top: 1px solid var(--border); z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 4px; cursor: pointer; transition: color 0.2s; color: var(--muted); font-size: 10px; gap: 2px; }
+.nav-item.active { color: var(--accent); }
+.nav-item .icon { font-size: 20px; }
+
+/* Header */
+.header { position: sticky; top: 0; background: var(--bg); padding: 14px 16px 10px; z-index: 99; border-bottom: 1px solid var(--border); }
+.header h1 { font-size: 22px; font-weight: 800; }
+.header .subtitle { font-size: 12px; color: var(--muted); }
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Game Cards - ESPN Scoreboard style */
+.game-card { background: var(--card); border-radius: 12px; margin: 8px 12px; overflow: hidden; border: 1px solid var(--border); }
+.game-card .game-status { padding: 6px 12px; font-size: 11px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+.game-card .game-status .live-dot { color: var(--red); animation: blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.team-row { display: flex; align-items: center; padding: 10px 12px; gap: 10px; }
+.team-row .team-name { flex: 1; font-size: 14px; font-weight: 600; }
+.team-row .team-score { font-size: 20px; font-weight: 800; min-width: 30px; text-align: right; }
+.team-row .team-score.winner { color: var(--text); }
+.team-row .team-score.loser { color: var(--muted); }
+.team-row + .team-row { border-top: 1px solid var(--border); }
+.fav-badge { font-size: 10px; color: var(--gold); }
+
+/* Section Headers */
+.section-header { padding: 16px 16px 8px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+
+/* Stat Cards - theScore style */
+.player-card { background: var(--card); border-radius: 12px; margin: 8px 12px; border: 1px solid var(--border); overflow: hidden; }
+.player-header { padding: 16px; border-bottom: 1px solid var(--border); }
+.player-header .name { font-size: 20px; font-weight: 800; }
+.player-header .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); }
+.stat-cell { padding: 14px 8px; text-align: center; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
+.stat-cell:nth-child(3n) { border-right: none; }
+.stat-cell .val { font-size: 20px; font-weight: 800; }
+.stat-cell .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.stat-cell.highlight .val { color: var(--green); }
+
+/* Record bar */
+.record-bar { display: flex; justify-content: space-around; padding: 12px; background: var(--card); border-radius: 12px; margin: 8px 12px; border: 1px solid var(--border); }
+.record-item { text-align: center; }
+.record-item .val { font-size: 22px; font-weight: 800; }
+.record-item .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+
+/* Game log */
+.game-log-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.game-log-item .result { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; margin-right: 12px; }
+.game-log-item .result.W { background: var(--green); color: #000; }
+.game-log-item .result.L { background: var(--red); color: #fff; }
+.game-log-item .info { flex: 1; }
+.game-log-item .info .opp { font-size: 14px; font-weight: 600; }
+.game-log-item .info .date { font-size: 11px; color: var(--muted); }
+.game-log-item .score { font-size: 14px; font-weight: 700; }
+
+/* Anomaly banners */
+.anomaly { margin: 8px 12px; padding: 12px 14px; border-radius: 10px; font-weight: 600; font-size: 13px; }
+.anomaly.alert { background: #0d2847; border-left: 3px solid var(--blue); }
+.anomaly.alltime { background: #2d2000; border-left: 3px solid var(--gold); color: var(--gold); }
+
+/* Search */
+.search-container { padding: 12px; }
+.search-bar { display: flex; gap: 8px; }
+.search-bar input { flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 15px; }
+.search-bar input::placeholder { color: var(--muted); }
+.search-btns { display: flex; gap: 6px; margin-top: 8px; }
+.search-btns button { flex: 1; padding: 10px; border-radius: 8px; border: none; background: var(--border); color: var(--text); font-weight: 600; font-size: 13px; cursor: pointer; }
+.search-btns button:active { background: var(--accent); }
+
+/* Results & Favorites list */
+.list-item { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.list-item:active { background: var(--border); }
+.list-item .list-icon { font-size: 18px; margin-right: 12px; }
+.list-item .list-text { flex: 1; }
+.list-item .list-text .primary { font-size: 14px; font-weight: 600; }
+.list-item .list-text .secondary { font-size: 12px; color: var(--muted); }
+.list-item .action { padding: 6px 10px; border-radius: 6px; border: none; font-size: 18px; cursor: pointer; background: none; color: var(--red); }
+
+/* Notifications */
+.notif-item { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.notif-item.alltime { background: #1a1500; border-left: 3px solid var(--gold); }
+.notif-item .msg { font-size: 14px; font-weight: 500; }
+.notif-item.alltime .msg { color: var(--gold); font-weight: 700; }
+.notif-item .time { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+.empty-state { text-align: center; padding: 60px 30px; color: var(--muted); }
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state .title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+
+.pill-btn { display: inline-block; padding: 8px 16px; border-radius: 20px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; }
+.pill-btn.primary { background: var(--accent); color: #fff; }
+.pill-btn.outline { background: none; border: 1px solid var(--border); color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- Scores Panel -->
+<div id="scores" class="panel active">
+  <div class="header"><h1>Scores</h1><div class="subtitle" id="scores-date"></div></div>
+  <div id="scores-content"></div>
+</div>
+
+<!-- Favorites Panel -->
+<div id="favorites" class="panel">
+  <div class="header"><h1>Favorites</h1></div>
+  <div class="search-container">
+    <div class="search-bar"><input id="search-input" placeholder="Search players or teams"></div>
+    <div class="search-btns"><button onclick="doSearch('player')">Search Players</button><button onclick="doSearch('team')">Search Teams</button></div>
+  </div>
+  <div id="search-results"></div>
+  <div class="section-header">Your Teams</div>
+  <div id="fav-teams"></div>
+  <div class="section-header">Your Players</div>
+  <div id="fav-players"></div>
+</div>
+
+<!-- Stats Panel -->
+<div id="stats" class="panel">
+  <div class="header"><h1>Stats</h1></div>
+  <div id="stats-content"><div class="empty-state"><div class="icon">📊</div><div class="title">Player & Team Stats</div><div>Tap a favorite to view detailed stats</div></div></div>
+</div>
+
+<!-- Alerts Panel -->
+<div id="alerts" class="panel">
+  <div class="header">
+    <h1>Alerts</h1>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="pill-btn primary" onclick="checkNotifs()">Check Now</button>
+      <button class="pill-btn outline" onclick="clearNotifs()">Clear All</button>
+    </div>
+  </div>
+  <div id="notif-content"></div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchTab('scores')"><span class="icon">⚾</span>Scores</div>
+  <div class="nav-item" onclick="switchTab('favorites')"><span class="icon">⭐</span>Favorites</div>
+  <div class="nav-item" onclick="switchTab('stats')"><span class="icon">📊</span>Stats</div>
+  <div class="nav-item" onclick="switchTab('alerts')"><span class="icon">🔔</span>Alerts</div>
+</div>
+
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id===id));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.textContent.trim().toLowerCase().startsWith(id.slice(0,4))));
+  if (id==='scores') loadScores();
+  if (id==='favorites') loadFavorites();
+  if (id==='alerts') loadNotifs();
+}
+
+// Scores
+async function loadScores() {
+  document.getElementById('scores-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
+  const r = await fetch('/api/live');
+  const d = await r.json();
+  let html = '';
+
+  if (d.live.length) {
+    html += '<div class="section-header">Live</div>';
+    d.live.forEach(g => { html += gameCard(g, 'live'); });
+  }
+  if (d.upcoming.length) {
+    html += '<div class="section-header">Upcoming</div>';
+    d.upcoming.forEach(g => { html += gameCard(g, 'upcoming'); });
+  }
+  if (d.final.length) {
+    html += '<div class="section-header">Final</div>';
+    d.final.forEach(g => { html += gameCard(g, 'final'); });
+  }
+  if (!html) html = '<div class="empty-state"><div class="icon">📅</div><div class="title">No Games Today</div></div>';
+  document.getElementById('scores-content').innerHTML = html;
+}
+
+function gameCard(g, status) {
+  const awayWin = g.away_score > g.home_score;
+  const homeWin = g.home_score > g.away_score;
+  let statusText = '';
+  if (status==='live') statusText = `<span class="live-dot">●</span> ${g.inning_state} ${g.inning}`;
+  else if (status==='final') statusText = 'Final';
+  else statusText = 'Scheduled';
+
+  return `<div class="game-card">
+    <div class="game-status"><span>${statusText}</span>${g.fav?'<span class="fav-badge">★ FAV</span>':''}</div>
+    <div class="team-row"><span class="team-name">${g.away}</span><span class="team-score ${status==='final'?(awayWin?'winner':'loser'):''}">${status!=='upcoming'?g.away_score:''}</span></div>
+    <div class="team-row"><span class="team-name">${g.home}</span><span class="team-score ${status==='final'?(homeWin?'winner':'loser'):''}">${status!=='upcoming'?g.home_score:''}</span></div>
+  </div>`;
+}
+
+// Favorites
+async function loadFavorites() {
+  const r = await fetch('/api/favorites');
+  const d = await r.json();
+  document.getElementById('fav-teams').innerHTML = d.teams.map(t =>
+    `<div class="list-item" onclick="loadTeam(${t.id})"><span class="list-icon">🏟️</span><div class="list-text"><div class="primary">${t.name}</div></div><button class="action" onclick="event.stopPropagation();removeFav('team',${t.id})">×</button></div>`
+  ).join('') || '<div class="empty-state"><div>No teams added yet</div></div>';
+  document.getElementById('fav-players').innerHTML = d.players.map(p =>
+    `<div class="list-item" onclick="loadPlayer(${p.id})"><span class="list-icon">👤</span><div class="list-text"><div class="primary">${p.name}</div></div><button class="action" onclick="event.stopPropagation();removeFav('player',${p.id})">×</button></div>`
+  ).join('') || '<div class="empty-state"><div>No players added yet</div></div>';
+}
+
+async function doSearch(type) {
+  const q = document.getElementById('search-input').value;
+  if (!q) return;
+  const r = await fetch(`/api/search/${type}?q=${encodeURIComponent(q)}`);
+  const d = await r.json();
+  document.getElementById('search-results').innerHTML = d.map(item =>
+    type==='player'
+      ? `<div class="list-item" onclick="addFav('player',${item.id},'${item.name.replace(/'/g,"\\'")}')"><span class="list-icon">👤</span><div class="list-text"><div class="primary">${item.name}</div><div class="secondary">${item.team}</div></div></div>`
+      : `<div class="list-item" onclick="addFav('team',${item.id},'${item.name.replace(/'/g,"\\'")}')"><span class="list-icon">🏟️</span><div class="list-text"><div class="primary">${item.name}</div></div></div>`
+  ).join('') || '<div class="empty-state"><div>No results found</div></div>';
+}
+
+async function addFav(type, id, name) {
+  await fetch('/api/favorites/add', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({type,id,name})});
+  document.getElementById('search-results').innerHTML = '';
+  document.getElementById('search-input').value = '';
+  loadFavorites();
+}
+async function removeFav(type, id) {
+  await fetch('/api/favorites/remove', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({type,id})});
+  loadFavorites();
+}
+
+// Stats
+async function loadTeam(id) {
+  switchTab('stats');
+  document.getElementById('stats-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading...</div></div>';
+  const r = await fetch(`/api/team/${id}`);
+  const d = await r.json();
+  let html = '';
+  if (d.live) {
+    html += `<div class="game-card"><div class="game-status"><span class="live-dot">●</span> LIVE — ${d.live.inning_state} ${d.live.inning}</div>
+      <div class="team-row"><span class="team-name">${d.live.away}</span><span class="team-score">${d.live.away_score}</span></div>
+      <div class="team-row"><span class="team-name">${d.live.home}</span><span class="team-score">${d.live.home_score}</span></div></div>`;
+  }
+  if (d.record.w !== undefined) {
+    html += `<div class="record-bar">
+      <div class="record-item"><div class="val">${d.record.w}-${d.record.l}</div><div class="lbl">Record</div></div>
+      <div class="record-item"><div class="val">${d.record.rank}</div><div class="lbl">Division</div></div>
+      <div class="record-item"><div class="val">${d.record.gb}</div><div class="lbl">GB</div></div>
+    </div>`;
+  }
+  if (d.recent.length) {
+    html += '<div class="section-header">Recent Games</div><div class="player-card">';
+    d.recent.forEach(g => {
+      html += `<div class="game-log-item"><div class="result ${g.won?'W':'L'}">${g.won?'W':'L'}</div><div class="info"><div class="opp">${g.home?'vs':'@'} ${g.opponent}</div><div class="date">${g.date}</div></div><div class="score">${g.score}</div></div>`;
+    });
+    html += '</div>';
+  }
+  document.getElementById('stats-content').innerHTML = html;
+}
+
+async function loadPlayer(id) {
+  switchTab('stats');
+  document.getElementById('stats-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading...</div></div>';
+  const r = await fetch(`/api/player/${id}`);
+  const d = await r.json();
+  const s = d.stats;
+  let html = `<div class="player-card"><div class="player-header"><div class="name">${d.name}</div><div class="meta">${d.position} • ${d.team}</div></div>`;
+
+  if (d.position !== 'P') {
+    html += `<div class="stat-row">
+      <div class="stat-cell"><div class="val">${s.avg||'---'}</div><div class="lbl">AVG</div></div>
+      <div class="stat-cell"><div class="val">${s.obp||'---'}</div><div class="lbl">OBP</div></div>
+      <div class="stat-cell"><div class="val">${s.slg||'---'}</div><div class="lbl">SLG</div></div>
+      <div class="stat-cell"><div class="val">${s.ops||'---'}</div><div class="lbl">OPS</div></div>
+      <div class="stat-cell"><div class="val">${s.homeRuns||0}</div><div class="lbl">HR</div></div>
+      <div class="stat-cell"><div class="val">${s.rbi||0}</div><div class="lbl">RBI</div></div>
+      <div class="stat-cell"><div class="val">${s.hits||0}</div><div class="lbl">H</div></div>
+      <div class="stat-cell"><div class="val">${s.runs||0}</div><div class="lbl">R</div></div>
+      <div class="stat-cell"><div class="val">${s.stolenBases||0}</div><div class="lbl">SB</div></div>
+      <div class="stat-cell"><div class="val">${s.strikeOuts||0}</div><div class="lbl">K</div></div>
+      <div class="stat-cell"><div class="val">${s.baseOnBalls||0}</div><div class="lbl">BB</div></div>
+      <div class="stat-cell"><div class="val">${s.doubles||0}</div><div class="lbl">2B</div></div>
+    </div>`;
+  } else {
+    html += `<div class="stat-row">
+      <div class="stat-cell"><div class="val">${s.era||'---'}</div><div class="lbl">ERA</div></div>
+      <div class="stat-cell"><div class="val">${(s.wins||0)+'-'+(s.losses||0)}</div><div class="lbl">W-L</div></div>
+      <div class="stat-cell"><div class="val">${s.strikeOuts||0}</div><div class="lbl">K</div></div>
+      <div class="stat-cell"><div class="val">${s.inningsPitched||'0'}</div><div class="lbl">IP</div></div>
+      <div class="stat-cell"><div class="val">${s.whip||'---'}</div><div class="lbl">WHIP</div></div>
+      <div class="stat-cell"><div class="val">${s.avg||'---'}</div><div class="lbl">BAA</div></div>
+    </div>`;
+  }
+  html += '</div>';
+
+  if (d.anomalies && d.anomalies.length) {
+    d.anomalies.forEach(a => { html += `<div class="anomaly ${a.level}">${a.level==='alltime'?'👑 ':'🔥 '}${a.msg}</div>`; });
+  }
+  document.getElementById('stats-content').innerHTML = html;
+}
+
+// Notifications
+async function loadNotifs() {
+  const r = await fetch('/api/notifications');
+  const d = await r.json();
+  if (!d.length) {
+    document.getElementById('notif-content').innerHTML = `<div class="empty-state"><div class="icon">🔔</div><div class="title">No Alerts Yet</div><div>You'll be notified when your favorites<br>do something statistically anomalous</div><div style="margin-top:16px;color:var(--gold)">👑 Gold = All-time historic territory</div></div>`;
+    return;
+  }
+  document.getElementById('notif-content').innerHTML = d.map(n =>
+    `<div class="notif-item ${n.category||'alert'}"><div class="msg">${n.message}</div><div class="time">${n.time}</div></div>`
+  ).join('');
+}
+async function checkNotifs() { await fetch('/api/notifications'); loadNotifs(); }
+async function clearNotifs() { await fetch('/api/notifications/clear',{method:'POST'}); loadNotifs(); }
+
+// Auto-refresh
+setInterval(() => { if (document.querySelector('#scores.active')) loadScores(); }, 30000);
+loadScores();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: srimlb
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn mlb_web:app --bind 0.0.0.0:$PORT
