@@ -1095,6 +1095,22 @@ def player_year_by_year(player_id):
                     s["team"] = sg.get("team", "")
                     seasons.append(s)
 
+    # Deduplicate seasons (player traded mid-year gets multiple entries) and sort
+    seen = {}
+    for s in seasons:
+        yr = s.get("season", "")
+        if yr not in seen:
+            seen[yr] = s
+        else:
+            # Keep the entry with more games played (or combine team names)
+            existing = seen[yr]
+            if int(s.get("gamesPlayed", 0)) > int(existing.get("gamesPlayed", 0)):
+                s["team"] = f"{existing.get('team', '')} / {s.get('team', '')}"
+                seen[yr] = s
+            else:
+                existing["team"] = f"{existing.get('team', '')} / {s.get('team', '')}"
+    seasons = sorted(seen.values(), key=lambda x: x.get("season", ""))
+
     # Flag standout seasons
     anomalies = []
     red_flag_seasons = []
