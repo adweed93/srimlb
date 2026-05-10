@@ -362,8 +362,42 @@ async function loadTeam(id) {
     html += '</div>';
   }
   document.getElementById('stats-content').innerHTML = html;
+  // Load roster/lineup async
+  loadTeamRoster(id);
   // Auto-refresh if live game
   if (d.live) { _teamRefreshTimer = setInterval(() => { if (document.querySelector('#stats.active')) loadTeam(id); }, 15000); }
+}
+
+async function loadTeamRoster(teamId) {
+  try {
+    const r = await fetch(`/api/team/${teamId}/roster`);
+    const d = await r.json();
+    let html = '';
+    if (d.lineup && d.lineup.length) {
+      html += '<div class="section-header">Lineup</div><div class="player-card">';
+      d.lineup.forEach((p, i) => {
+        html += `<div class="list-item" onclick="loadPlayer(${p.id})">${playerImg(p.id, 28)}<div class="list-text" style="margin-left:10px"><div class="primary">${i+1}. ${p.name}</div><div class="secondary">${p.pos}</div></div></div>`;
+      });
+      html += '</div>';
+    }
+    if (d.roster && d.roster.length) {
+      const groups = {};
+      d.roster.forEach(p => { (groups[p.type] = groups[p.type] || []).push(p); });
+      const order = ['Pitcher', 'Catcher', 'Infielder', 'Outfielder'];
+      html += '<div class="section-header">Roster</div>';
+      order.forEach(type => {
+        if (!groups[type]) return;
+        html += `<div class="player-card"><div class="stat-section-label">${type}s</div>`;
+        groups[type].forEach(p => {
+          html += `<div class="list-item" onclick="loadPlayer(${p.id})">${playerImg(p.id, 28)}<div class="list-text" style="margin-left:10px"><div class="primary">#${p.number} ${p.name}</div><div class="secondary">${p.pos}</div></div></div>`;
+        });
+        html += '</div>';
+      });
+    }
+    if (html) {
+      document.getElementById('stats-content').insertAdjacentHTML('beforeend', html);
+    }
+  } catch(e) {}
 }
 
 function loadTeamFull(id, name) { loadTeam(id); }

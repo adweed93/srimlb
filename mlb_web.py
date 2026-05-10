@@ -156,6 +156,58 @@ def team_stats(team_id):
     return jsonify({"record": record, "recent": recent, "live": live})
 
 
+@app.route("/api/team/<int:team_id>/roster")
+def team_roster(team_id):
+    """Get team roster grouped by position, plus lineup if available."""
+    data = _cached(f"roster_{team_id}",
+                   lambda: statsapi.get("team_roster", {"teamId": team_id}), ttl_seconds=300)
+    roster = []
+    for p in data.get("roster", []):
+        roster.append({
+            "id": p["person"]["id"],
+            "name": p["person"]["fullName"],
+            "pos": p["position"]["abbreviation"],
+            "number": p.get("jerseyNumber", ""),
+            "type": p["position"]["type"],
+        })
+
+    # Try to get lineup from today's game
+    lineup = []
+    try:
+        schedule = _cached(f"team_schedule_{team_id}",
+                           lambda: statsapi.schedule(team=team_id), ttl_seconds=120)
+        game = None
+        for g in schedule:
+            if g["status"] in ("In Progress", "Pre-Game", "Warmup", "Scheduled"):
+                game = g
+                break
+        if not game:
+            # Use most recent final game for "last lineup"
+            finals = [g for g in schedule if g["status"] == "Final"]
+            if finals:
+                game = finals[-1]
+        if game:
+            gd = statsapi.get("game", {"gamePk": game["game_id"]})
+            home = game.get("home_id") == team_id
+            side = "home" if home else "away"
+            box = gd.get("liveData", {}).get("boxscore", {}).get("teams", {}).get(side, {})
+            order = box.get("battingOrder", [])
+            players = box.get("players", {})
+            for pid in order:
+                pdata = players.get(f"ID{pid}", {})
+                person = pdata.get("person", {})
+                pos = pdata.get("position", {})
+                lineup.append({
+                    "id": pid,
+                    "name": person.get("fullName", ""),
+                    "pos": pos.get("abbreviation", ""),
+                })
+    except Exception:
+        pass
+
+    return jsonify({"roster": roster, "lineup": lineup})
+
+
 @app.route("/api/player/<int:player_id>")
 def player_stats(player_id):
     info = _cached(f"player_season_{player_id}",
