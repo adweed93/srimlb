@@ -94,6 +94,7 @@ def live_games():
             "status": g["status"], "inning": g.get("current_inning", ""),
             "inning_state": g.get("inning_state", ""),
             "fav": g.get("home_id") in fav_ids or g.get("away_id") in fav_ids,
+            "game_id": g.get("game_id"),
         }
         if g["status"] == "In Progress":
             result["live"].append(entry)
@@ -513,6 +514,29 @@ def player_live(player_id):
         pass
 
     return jsonify(result)
+
+
+@app.route("/api/games/history")
+def games_history():
+    """Get all games from the past 14 days."""
+    all_games = []
+    for days_ago in range(14):
+        date = (datetime.now() - timedelta(days=days_ago)).strftime("%Y-%m-%d")
+        try:
+            games = statsapi.schedule(date=date)
+            for g in games:
+                if g["status"] == "Final":
+                    all_games.append({
+                        "game_id": g.get("game_id"),
+                        "date": g["game_date"],
+                        "away": g["away_name"], "home": g["home_name"],
+                        "away_id": g.get("away_id"), "home_id": g.get("home_id"),
+                        "away_score": g.get("away_score", 0),
+                        "home_score": g.get("home_score", 0),
+                    })
+        except Exception:
+            continue
+    return jsonify(all_games)
 
 
 @app.route("/api/game/<int:game_id>/boxscore")

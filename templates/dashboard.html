@@ -247,6 +247,30 @@ async function loadScores() {
     d.final.forEach(g => { html += gameCard(g, 'final'); });
   }
   if (!html) html = '<div class="empty-state"><div class="icon">📅</div><div class="title">No Games Today</div></div>';
+  html += '<div style="padding:12px;text-align:center"><button class="pill-btn outline" onclick="loadHistoricalGames()">📅 Browse Past 2 Weeks</button></div>';
+  document.getElementById('scores-content').innerHTML = html;
+}
+
+async function loadHistoricalGames() {
+  document.getElementById('scores-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading past games...</div></div>';
+  const r = await fetch('/api/games/history');
+  const games = await r.json();
+  let html = '<div class="section-header">Past 2 Weeks — Tap for Box Score</div>';
+  let currentDate = '';
+  games.forEach(g => {
+    if (g.date !== currentDate) {
+      currentDate = g.date;
+      html += `<div class="section-header" style="padding-top:12px">${g.date}</div>`;
+    }
+    const awayWin = g.away_score > g.home_score;
+    html += `<div class="game-card" onclick="loadBoxScore(${g.game_id})" style="cursor:pointer">
+      <div class="game-status"><span>Final</span></div>
+      <div class="team-row">${teamLogo(g.away_id)}<span class="team-name">${g.away}</span><span class="team-score ${awayWin?'winner':'loser'}">${g.away_score}</span></div>
+      <div class="team-row">${teamLogo(g.home_id)}<span class="team-name">${g.home}</span><span class="team-score ${!awayWin?'winner':'loser'}">${g.home_score}</span></div>
+    </div>`;
+  });
+  if (!games.length) html += '<div class="empty-state"><div>No games found</div></div>';
+  html += '<div style="padding:12px;text-align:center"><button class="pill-btn outline" onclick="loadScores()">← Back to Today</button></div>';
   document.getElementById('scores-content').innerHTML = html;
 }
 
@@ -258,7 +282,7 @@ function gameCard(g, status) {
   else if (status==='final') statusText = 'Final';
   else statusText = 'Scheduled';
 
-  return `<div class="game-card">
+  return `<div class="game-card" ${g.game_id && status!=='upcoming'?`onclick="loadBoxScore(${g.game_id})" style="cursor:pointer"`:''}> 
     <div class="game-status"><span>${statusText}</span>${g.fav?'<span class="fav-badge">★ FAV</span>':''}</div>
     <div class="team-row">${teamLogo(g.away_id)}<span class="team-name">${g.away}</span><span class="team-score ${status==='final'?(awayWin?'winner':'loser'):''}">${status!=='upcoming'?g.away_score:''}</span></div>
     <div class="team-row">${teamLogo(g.home_id)}<span class="team-name">${g.home}</span><span class="team-score ${status==='final'?(homeWin?'winner':'loser'):''}">${status!=='upcoming'?g.home_score:''}</span></div>
