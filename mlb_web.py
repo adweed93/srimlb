@@ -1,14 +1,33 @@
 """MLB Favorites Dashboard - Flask Web App (mobile-friendly)."""
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
+from threading import Lock
 
 import statsapi
 from flask import Flask, render_template, jsonify, request
 
 from mlb_notifications import NotificationChecker
 from mlb_thresholds import get_thresholds
+
+# Simple TTL cache for API responses
+_cache = {}
+_cache_lock = Lock()
+
+def _cached(key, fn, ttl_seconds=30):
+    """Return cached result if fresh, otherwise call fn and cache it."""
+    now = datetime.now()
+    with _cache_lock:
+        if key in _cache:
+            val, ts = _cache[key]
+            if (now - ts).total_seconds() < ttl_seconds:
+                return val
+    result = fn()
+    with _cache_lock:
+        _cache[key] = (result, now)
+    return result
 
 app = Flask(__name__, template_folder=str(Path(__file__).parent / "templates"))
 
@@ -139,7 +158,8 @@ def team_stats(team_id):
 
 @app.route("/api/player/<int:player_id>")
 def player_stats(player_id):
-    info = statsapi.player_stat_data(player_id, type="season")
+    info = _cached(f"player_season_{player_id}",
+                   lambda: statsapi.player_stat_data(player_id, type="season"), ttl_seconds=60)
     stats = {}
     group = ""
     for sg in info.get("stats", []):
@@ -152,37 +172,57 @@ def player_stats(player_id):
             group = "pitching"
             break
 
-    # Recent game log
+    # Fetch game log and schedule in parallel
     recent_games = []
     notables = []
-    try:
-        game_log = statsapi.player_stat_data(player_id, type="gameLog")
-        if game_log.get("stats"):
-            gl_stats = game_log["stats"][0].get("stats", {})
-            # The gameLog type returns the most recent game stats
-            if gl_stats:
-                recent_games.append({"type": "latest", "stats": gl_stats})
-    except Exception:
-        pass
 
-    # Get recent games from schedule for context
-    try:
+    def _fetch_game_log():
+        try:
+            return _cached(f"player_gamelog_{player_id}",
+                           lambda: statsapi.player_stat_data(player_id, type="gameLog"), ttl_seconds=60)
+        except Exception:
+            return None
+
+    def _fetch_schedule():
+        try:
+            if info.get("current_team"):
+                teams = statsapi.lookup_team(info["current_team"])
+                if teams:
+                    team_id = teams[0]["id"]
+                    return _cached(f"team_schedule_{team_id}",
+                                   lambda: statsapi.schedule(team=team_id), ttl_seconds=120)
+        except Exception:
+            pass
+        return None
+
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        gl_future = ex.submit(_fetch_game_log)
+        sched_future = ex.submit(_fetch_schedule)
+        game_log = gl_future.result()
+        schedule = sched_future.result()
+
+    if game_log and game_log.get("stats"):
+        gl_stats = game_log["stats"][0].get("stats", {})
+        if gl_stats:
+            recent_games.append({"type": "latest", "stats": gl_stats})
+
+    if schedule:
+        team_id = None
         if info.get("current_team"):
-            teams = statsapi.lookup_team(info["current_team"])
+            teams = _cached(f"lookup_team_{info['current_team']}",
+                            lambda: statsapi.lookup_team(info["current_team"]), ttl_seconds=300)
             if teams:
                 team_id = teams[0]["id"]
-                schedule = statsapi.schedule(team=team_id)
-                final = [g for g in schedule if g["status"] == "Final"]
-                for g in final[-5:]:
-                    home = g.get("home_id") == team_id
-                    recent_games.append({
-                        "date": g["game_date"],
-                        "opponent": g["away_name"] if home else g["home_name"],
-                        "score": f"{g.get('home_score',0)}-{g.get('away_score',0)}" if home else f"{g.get('away_score',0)}-{g.get('home_score',0)}",
-                        "won": (home and g.get("home_score",0) > g.get("away_score",0)) or (not home and g.get("away_score",0) > g.get("home_score",0)),
-                    })
-    except Exception:
-        pass
+        if team_id:
+            final = [g for g in schedule if g["status"] == "Final"]
+            for g in final[-5:]:
+                home = g.get("home_id") == team_id
+                recent_games.append({
+                    "date": g["game_date"],
+                    "opponent": g["away_name"] if home else g["home_name"],
+                    "score": f"{g.get('home_score',0)}-{g.get('away_score',0)}" if home else f"{g.get('away_score',0)}-{g.get('home_score',0)}",
+                    "won": (home and g.get("home_score",0) > g.get("away_score",0)) or (not home and g.get("away_score",0) > g.get("home_score",0)),
+                })
 
     # Anomaly check with historical record comparisons
     t = get_thresholds()
