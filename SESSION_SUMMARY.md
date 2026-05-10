@@ -207,3 +207,18 @@
 - Full project documentation added to GitHub
 - Covers all features, tech stack, project structure, how to run locally, dependencies, and historical comparison data sources
 - **Commit**: `e468470`
+
+
+### Feature: Upcoming Games on Scores Page
+- Scores page now shows "Coming Up Next" — the next 3 upcoming games from future days with date and game time
+- "📅 See All Upcoming (2 Weeks)" button expands to full 14-day schedule grouped by date
+- Each upcoming game card shows team logos, names, date, and local game time
+- Favorite teams get ★ FAV badge
+- New `/api/upcoming` endpoint returns all scheduled games for next 14 days
+- **Commit**: `088418a`
+
+### Feature: Upcoming Games on Team Page
+- Team page now has "Upcoming Games" section showing next 3 games with opponent logo, home/away, date, and time
+- "Show All X Games ▼" button expands to reveal full upcoming schedule
+- Each entry: vs/@ badge, opponent name, date, time, opponent team logo
+- **Commit**: `602de7a`
