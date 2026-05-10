@@ -132,23 +132,59 @@ def team_stats(team_id):
 def player_stats(player_id):
     info = statsapi.player_stat_data(player_id, type="season")
     stats = {}
+    group = ""
     for sg in info.get("stats", []):
         if sg["group"] == "hitting":
             stats = sg.get("stats", {})
+            group = "hitting"
             break
         elif sg["group"] == "pitching":
             stats = sg.get("stats", {})
+            group = "pitching"
             break
+
+    # Recent game log
+    recent_games = []
+    notables = []
+    try:
+        game_log = statsapi.player_stat_data(player_id, type="gameLog")
+        if game_log.get("stats"):
+            gl_stats = game_log["stats"][0].get("stats", {})
+            # The gameLog type returns the most recent game stats
+            if gl_stats:
+                recent_games.append({"type": "latest", "stats": gl_stats})
+    except Exception:
+        pass
+
+    # Get recent games from schedule for context
+    try:
+        if info.get("current_team"):
+            teams = statsapi.lookup_team(info["current_team"])
+            if teams:
+                team_id = teams[0]["id"]
+                schedule = statsapi.schedule(team=team_id)
+                final = [g for g in schedule if g["status"] == "Final"]
+                for g in final[-5:]:
+                    home = g.get("home_id") == team_id
+                    recent_games.append({
+                        "date": g["game_date"],
+                        "opponent": g["away_name"] if home else g["home_name"],
+                        "score": f"{g.get('home_score',0)}-{g.get('away_score',0)}" if home else f"{g.get('away_score',0)}-{g.get('home_score',0)}",
+                        "won": (home and g.get("home_score",0) > g.get("away_score",0)) or (not home and g.get("away_score",0) > g.get("home_score",0)),
+                    })
+    except Exception:
+        pass
 
     # Anomaly check
     t = get_thresholds()
     anomalies = []
     games = int(stats.get("gamesPlayed", 0))
-    if games > 20 and info.get("position") != "P":
+    if games > 20 and group == "hitting":
         bat_season = t.get("batting_season", {})
         avg = float(stats.get("avg", "0"))
         hr = int(stats.get("homeRuns", 0))
         hr_pace = (hr / games) * 162
+        rbi_pace = (int(stats.get("rbi", 0)) / games) * 162
         if avg >= bat_season.get("avg_alltime", 0.37):
             anomalies.append({"msg": f"Batting .{int(avg*1000)} — ALL-TIME TERRITORY", "level": "alltime"})
         elif avg >= bat_season.get("avg_anomalous", 0.33):
@@ -157,6 +193,15 @@ def player_stats(player_id):
             anomalies.append({"msg": f"On pace for {int(hr_pace)} HRs — RECORD PACE", "level": "alltime"})
         elif hr_pace >= bat_season.get("hr_pace_anomalous", 39):
             anomalies.append({"msg": f"On pace for {int(hr_pace)} HRs", "level": "alert"})
+        if rbi_pace >= 130:
+            anomalies.append({"msg": f"On pace for {int(rbi_pace)} RBI", "level": "alert"})
+    elif games > 5 and group == "pitching":
+        pitch_season = t.get("pitching_season", {})
+        era = float(stats.get("era", "99"))
+        if era <= pitch_season.get("era_alltime", 1.8):
+            anomalies.append({"msg": f"{era:.2f} ERA — ALL-TIME TERRITORY", "level": "alltime"})
+        elif era <= pitch_season.get("era_anomalous", 2.5):
+            anomalies.append({"msg": f"{era:.2f} ERA — elite", "level": "alert"})
 
     return jsonify({
         "name": info.get("first_name", "") + " " + info.get("last_name", ""),
@@ -164,6 +209,8 @@ def player_stats(player_id):
         "team": info.get("current_team", ""),
         "stats": stats,
         "anomalies": anomalies,
+        "recent_games": recent_games[1:] if len(recent_games) > 1 else [],
+        "last_game": recent_games[0].get("stats", {}) if recent_games and recent_games[0].get("type") == "latest" else {},
     })
 
 
