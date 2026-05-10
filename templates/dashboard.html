@@ -104,9 +104,51 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
 .empty-state .title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
 
-.pill-btn { display: inline-block; padding: 8px 16px; border-radius: 20px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; }
+.pill-btn { display: inline-block; padding: 8px 16px; border-radius: 20px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .pill-btn.primary { background: var(--accent); color: #fff; }
 .pill-btn.outline { background: none; border: 1px solid var(--border); color: var(--muted); }
+.pill-btn.outline:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Filter tabs row */
+.filter-tabs { display: flex; gap: 6px; padding: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.filter-tabs::-webkit-scrollbar { display: none; }
+.filter-tabs .pill-btn { white-space: nowrap; flex-shrink: 0; }
+
+/* Stat section sub-headers inside cards */
+.stat-section-label { padding: 10px 14px 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent); background: var(--bg); }
+
+/* Progress bars for record comparisons */
+.record-compare { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.record-compare .rc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.record-compare .rc-stat { font-weight: 700; font-size: 13px; }
+.record-compare .rc-pct { font-size: 12px; color: var(--muted); }
+.record-compare .rc-bar { background: var(--border); border-radius: 4px; height: 6px; margin-bottom: 6px; overflow: hidden; }
+.record-compare .rc-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.record-compare .rc-detail { font-size: 11px; color: var(--muted); }
+.record-compare .rc-sub { padding: 3px 14px 3px 28px; font-size: 11px; color: var(--muted); border-bottom: 1px solid var(--border); }
+
+/* Pitch mix bars */
+.pitch-mix-row { display: flex; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); gap: 10px; }
+.pitch-mix-row .pm-type { width: 40px; font-weight: 700; font-size: 12px; color: var(--text); }
+.pitch-mix-row .pm-bar { flex: 1; background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+.pitch-mix-row .pm-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+.pitch-mix-row .pm-pct { width: 40px; text-align: right; font-size: 12px; color: var(--muted); }
+
+/* Year by year rows */
+.yby-row { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.yby-row .yby-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.yby-row .yby-year { font-weight: 700; font-size: 14px; }
+.yby-row .yby-team { font-size: 12px; color: var(--muted); }
+.yby-row .yby-stats { display: flex; gap: 12px; font-size: 12px; flex-wrap: wrap; }
+.yby-row .yby-stats b { color: var(--text); }
+
+/* Smooth panel transitions */
+.panel { animation: fadeIn 0.15s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Last game highlight card */
+.last-game-card { background: var(--card); border-radius: 12px; margin: 8px 12px; border: 1px solid var(--border); overflow: hidden; }
+.last-game-card .lg-header { padding: 10px 14px; background: linear-gradient(135deg, #1a2332, #0d1117); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: 0.5px; }
 </style>
 </head>
 <body>
@@ -304,14 +346,14 @@ async function loadPlayer(id) {
   html += `<div class="player-card"><div class="player-header"><div class="name">${d.name}</div><div class="meta">${d.position} • ${d.team}</div></div>`;
 
   if (d.position !== 'P') {
-    html += `<div class="section-header" style="padding:8px 14px 4px;margin:0">Slash Line</div><div class="stat-row">
+    html += `<div class="stat-section-label">Slash Line</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.avg||'---'}</div><div class="lbl">AVG</div></div>
       <div class="stat-cell"><div class="val">${s.obp||'---'}</div><div class="lbl">OBP</div></div>
       <div class="stat-cell"><div class="val">${s.slg||'---'}</div><div class="lbl">SLG</div></div>
       <div class="stat-cell"><div class="val">${s.ops||'---'}</div><div class="lbl">OPS</div></div>
       <div class="stat-cell"><div class="val">${s.babip||'---'}</div><div class="lbl">BABIP</div></div>
       <div class="stat-cell"><div class="val">${s.atBatsPerHomeRun||'---'}</div><div class="lbl">AB/HR</div></div>
-    </div><div class="section-header" style="padding:8px 14px 4px;margin:0">Counting</div><div class="stat-row">
+    </div><div class="stat-section-label">Counting</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.gamesPlayed||0}</div><div class="lbl">G</div></div>
       <div class="stat-cell"><div class="val">${s.plateAppearances||0}</div><div class="lbl">PA</div></div>
       <div class="stat-cell"><div class="val">${s.hits||0}</div><div class="lbl">H</div></div>
@@ -321,7 +363,7 @@ async function loadPlayer(id) {
       <div class="stat-cell"><div class="val">${s.runs||0}</div><div class="lbl">R</div></div>
       <div class="stat-cell"><div class="val">${s.rbi||0}</div><div class="lbl">RBI</div></div>
       <div class="stat-cell"><div class="val">${s.totalBases||0}</div><div class="lbl">TB</div></div>
-    </div><div class="section-header" style="padding:8px 14px 4px;margin:0">Discipline & Speed</div><div class="stat-row">
+    </div><div class="stat-section-label">Discipline & Speed</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.baseOnBalls||0}</div><div class="lbl">BB</div></div>
       <div class="stat-cell"><div class="val">${s.strikeOuts||0}</div><div class="lbl">K</div></div>
       <div class="stat-cell"><div class="val">${s.hitByPitch||0}</div><div class="lbl">HBP</div></div>
@@ -330,21 +372,21 @@ async function loadPlayer(id) {
       <div class="stat-cell"><div class="val">${s.groundIntoDoublePlay||0}</div><div class="lbl">GIDP</div></div>
     </div>`;
   } else {
-    html += `<div class="section-header" style="padding:8px 14px 4px;margin:0">Core</div><div class="stat-row">
+    html += `<div class="stat-section-label">Core</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.era||'---'}</div><div class="lbl">ERA</div></div>
       <div class="stat-cell"><div class="val">${(s.wins||0)+'-'+(s.losses||0)}</div><div class="lbl">W-L</div></div>
       <div class="stat-cell"><div class="val">${s.whip||'---'}</div><div class="lbl">WHIP</div></div>
       <div class="stat-cell"><div class="val">${s.inningsPitched||'0'}</div><div class="lbl">IP</div></div>
       <div class="stat-cell"><div class="val">${s.gamesPlayed||0}</div><div class="lbl">G</div></div>
       <div class="stat-cell"><div class="val">${s.gamesStarted||0}</div><div class="lbl">GS</div></div>
-    </div><div class="section-header" style="padding:8px 14px 4px;margin:0">Batted Ball</div><div class="stat-row">
+    </div><div class="stat-section-label">Batted Ball</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.strikeOuts||0}</div><div class="lbl">K</div></div>
       <div class="stat-cell"><div class="val">${s.baseOnBalls||0}</div><div class="lbl">BB</div></div>
       <div class="stat-cell"><div class="val">${s.hits||0}</div><div class="lbl">H</div></div>
       <div class="stat-cell"><div class="val">${s.homeRuns||0}</div><div class="lbl">HR</div></div>
       <div class="stat-cell"><div class="val">${s.avg||'---'}</div><div class="lbl">BAA</div></div>
       <div class="stat-cell"><div class="val">${s.obp||'---'}</div><div class="lbl">OBP Agst</div></div>
-    </div><div class="section-header" style="padding:8px 14px 4px;margin:0">Efficiency</div><div class="stat-row">
+    </div><div class="stat-section-label">Efficiency</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.strikeoutWalkRatio||'---'}</div><div class="lbl">K/BB</div></div>
       <div class="stat-cell"><div class="val">${s.strikeoutsPer9Inn||'---'}</div><div class="lbl">K/9</div></div>
       <div class="stat-cell"><div class="val">${s.walksPer9Inn||'---'}</div><div class="lbl">BB/9</div></div>
@@ -367,18 +409,13 @@ async function loadPlayer(id) {
       if (c.stat) {
         const pct = Math.min(c.pct, 100);
         const barColor = pct >= 90 ? 'var(--gold)' : pct >= 70 ? 'var(--green)' : 'var(--blue)';
-        html += `<div style="padding:12px 14px;border-bottom:1px solid var(--border)">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span style="font-weight:700;font-size:13px">${c.stat}: <span style="color:var(--accent)">${c.current}</span></span>
-            <span style="font-size:12px;color:var(--muted)">${c.pct}% of record</span>
-          </div>
-          <div style="background:var(--border);border-radius:4px;height:6px;margin-bottom:6px">
-            <div style="background:${barColor};height:100%;border-radius:4px;width:${pct}%"></div>
-          </div>
-          <div style="font-size:11px;color:var(--muted)">Record: ${c.record} — ${c.holder}</div>
+        html += `<div class="record-compare">
+          <div class="rc-header"><span class="rc-stat">${c.stat}: <span style="color:var(--accent)">${c.current}</span></span><span class="rc-pct">${c.pct}% of record</span></div>
+          <div class="rc-bar"><div class="rc-bar-fill" style="background:${barColor};width:${pct}%"></div></div>
+          <div class="rc-detail">Record: ${c.record} — ${c.holder}</div>
         </div>`;
       } else {
-        html += `<div style="padding:4px 14px 8px;font-size:11px;color:var(--muted)">• ${c.record} — ${c.holder}</div>`;
+        html += `<div class="rc-sub">• ${c.record} — ${c.holder}</div>`;
       }
     });
     html += '</div>';
@@ -387,7 +424,7 @@ async function loadPlayer(id) {
   // Last game stats
   if (d.last_game && Object.keys(d.last_game).length) {
     const lg = d.last_game;
-    html += '<div class="section-header">Last Game</div><div class="player-card"><div class="stat-row">';
+    html += '<div class="section-header">Last Game</div><div class="last-game-card"><div class="lg-header">Most Recent Performance</div><div class="stat-row">';
     if (d.position !== 'P') {
       html += `<div class="stat-cell${parseInt(lg.hits||0)>=3?' highlight':''}"><div class="val">${lg.hits||0}-${lg.atBats||0}</div><div class="lbl">H-AB</div></div>`;
       html += `<div class="stat-cell${parseInt(lg.homeRuns||0)>=1?' highlight':''}"><div class="val">${lg.homeRuns||0}</div><div class="lbl">HR</div></div>`;
@@ -462,17 +499,9 @@ async function loadPlayerFilter(type) {
         const yr = s.season || s.year || '';
         const team = s.team || '';
         if (d.position !== 'P') {
-          html += `<div style="padding:10px 14px;border-bottom:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700">${yr}</span><span style="color:var(--muted);font-size:12px">${team}</span></div>
-            <div style="display:flex;gap:12px;font-size:12px;flex-wrap:wrap">
-              <span><b>${s.avg||'---'}</b> AVG</span><span><b>${s.homeRuns||0}</b> HR</span><span><b>${s.rbi||0}</b> RBI</span><span><b>${s.hits||0}</b> H</span><span><b>${s.ops||'---'}</b> OPS</span><span><b>${s.gamesPlayed||0}</b> G</span>
-            </div></div>`;
+          html += `<div class="yby-row"><div class="yby-header"><span class="yby-year">${yr}</span><span class="yby-team">${team}</span></div><div class="yby-stats"><span><b>${s.avg||'---'}</b> AVG</span><span><b>${s.homeRuns||0}</b> HR</span><span><b>${s.rbi||0}</b> RBI</span><span><b>${s.hits||0}</b> H</span><span><b>${s.ops||'---'}</b> OPS</span><span><b>${s.gamesPlayed||0}</b> G</span></div></div>`;
         } else {
-          html += `<div style="padding:10px 14px;border-bottom:1px solid var(--border)">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-weight:700">${yr}</span><span style="color:var(--muted);font-size:12px">${team}</span></div>
-            <div style="display:flex;gap:12px;font-size:12px;flex-wrap:wrap">
-              <span><b>${s.era||'---'}</b> ERA</span><span><b>${(s.wins||0)}-${s.losses||0}</b> W-L</span><span><b>${s.strikeOuts||0}</b> K</span><span><b>${s.inningsPitched||'0'}</b> IP</span>
-            </div></div>`;
+          html += `<div class="yby-row"><div class="yby-header"><span class="yby-year">${yr}</span><span class="yby-team">${team}</span></div><div class="yby-stats"><span><b>${s.era||'---'}</b> ERA</span><span><b>${(s.wins||0)}-${s.losses||0}</b> W-L</span><span><b>${s.strikeOuts||0}</b> K</span><span><b>${s.inningsPitched||'0'}</b> IP</span></div></div>`;
         }
       });
     } else {
@@ -538,7 +567,7 @@ async function loadStatcast(id) {
     if (m.pitch_mix) {
       html += '<div class="section-header">Pitch Mix</div><div class="player-card">';
       Object.entries(m.pitch_mix).forEach(([type, pct]) => {
-        html += `<div style="display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border)"><span style="width:50px;font-weight:700">${type}</span><div style="flex:1;background:var(--border);border-radius:4px;height:8px;margin:0 12px"><div style="background:var(--accent);height:100%;border-radius:4px;width:${pct}%"></div></div><span style="font-size:12px">${pct}%</span></div>`;
+        html += `<div class="pitch-mix-row"><span class="pm-type">${type}</span><div class="pm-bar"><div class="pm-bar-fill" style="width:${pct}%"></div></div><span class="pm-pct">${pct}%</span></div>`;
       });
       html += '</div>';
     }
@@ -551,9 +580,9 @@ function filterTabs(active) {
     {id:'season', label:'2026'},
     {id:'career', label:'Career'},
     {id:'yearByYear', label:'Year by Year'},
-    {id:'statcast', label:'Statcast'},
+    {id:'statcast', label:'⚡ Statcast'},
   ];
-  return `<div style="display:flex;gap:4px;padding:8px 12px;overflow-x:auto">${tabs.map(t =>
+  return `<div class="filter-tabs">${tabs.map(t =>
     `<button onclick="loadPlayerFilter('${t.id}')" class="pill-btn ${active===t.id?'primary':'outline'}">${t.label}</button>`
   ).join('')}</div>`;
 }
