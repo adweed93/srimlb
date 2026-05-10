@@ -227,7 +227,19 @@ def team_stats(team_id):
             live = {"away": g["away_name"], "home": g["home_name"], "away_score": g.get("away_score", 0), "home_score": g.get("home_score", 0), "inning": g.get("current_inning", ""), "inning_state": g.get("inning_state", ""), "game_id": g.get("game_id")}
             break
 
-    return jsonify({"record": record, "recent": recent, "live": live})
+    upcoming = []
+    for g in schedule:
+        if g["status"] not in ("Final", "In Progress"):
+            home = g.get("home_id") == team_id
+            upcoming.append({
+                "date": g.get("game_date", ""),
+                "game_time": g.get("game_datetime", ""),
+                "opponent": g["away_name"] if home else g["home_name"],
+                "opponent_id": g.get("away_id") if home else g.get("home_id"),
+                "home": home,
+            })
+
+    return jsonify({"record": record, "recent": recent, "live": live, "upcoming": upcoming})
 
 
 @app.route("/api/team/<int:team_id>/roster")

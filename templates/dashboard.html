@@ -410,6 +410,28 @@ async function loadTeam(id) {
     });
     html += '</div>';
   }
+  if (d.upcoming && d.upcoming.length) {
+    const preview = d.upcoming.slice(0, 3);
+    const rest = d.upcoming.slice(3);
+    html += '<div class="section-header">Upcoming Games</div><div class="player-card">';
+    preview.forEach(g => {
+      const dt = g.game_time ? new Date(g.game_time) : null;
+      const dateStr = dt ? dt.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) : g.date || '';
+      const timeStr = dt ? dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : 'TBD';
+      html += `<div class="game-log-item"><div class="result" style="background:var(--border);color:var(--text)">${g.home?'vs':'@'}</div><div class="info"><div class="opp">${g.opponent}</div><div class="date">${dateStr} • ${timeStr}</div></div>${g.opponent_id?teamLogo(g.opponent_id):''}</div>`;
+    });
+    if (rest.length) {
+      html += `<div id="team-upcoming-rest" style="display:none">`;
+      rest.forEach(g => {
+        const dt = g.game_time ? new Date(g.game_time) : null;
+        const dateStr = dt ? dt.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) : g.date || '';
+        const timeStr = dt ? dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : 'TBD';
+        html += `<div class="game-log-item"><div class="result" style="background:var(--border);color:var(--text)">${g.home?'vs':'@'}</div><div class="info"><div class="opp">${g.opponent}</div><div class="date">${dateStr} • ${timeStr}</div></div>${g.opponent_id?teamLogo(g.opponent_id):''}</div>`;
+      });
+      html += `</div><div style="padding:10px;text-align:center"><button class="pill-btn outline" onclick="document.getElementById('team-upcoming-rest').style.display='block';this.style.display='none'">Show All ${d.upcoming.length} Games ▼</button></div>`;
+    }
+    html += '</div>';
+  }
   document.getElementById('stats-content').innerHTML = html;
   // Load roster/lineup async
   loadTeamRoster(id);
