@@ -443,6 +443,84 @@ def player_live(player_id):
     return jsonify(result)
 
 
+@app.route("/api/game/<int:game_id>/live")
+def game_live_feed(game_id):
+    """Get live game feed with runners, count, and last pitch location."""
+    try:
+        import requests as req
+        feed = req.get(f"https://statsdata.mlb.com/api/v1.1/game/{game_id}/feed/live").json()
+        linescore = feed.get("liveData", {}).get("linescore", {})
+        plays = feed.get("liveData", {}).get("plays", {})
+
+        # Runners
+        offense = linescore.get("offense", {})
+        runners = {
+            "first": bool(offense.get("first")),
+            "second": bool(offense.get("second")),
+            "third": bool(offense.get("third")),
+        }
+
+        # Count
+        count = {
+            "balls": linescore.get("balls", 0),
+            "strikes": linescore.get("strikes", 0),
+            "outs": linescore.get("outs", 0),
+        }
+
+        # Current batter/pitcher
+        batter = offense.get("batter", {}).get("fullName", "")
+        pitcher_info = linescore.get("defense", {}).get("pitcher", {})
+        pitcher = pitcher_info.get("fullName", "")
+
+        # Last pitch location
+        last_pitch = {}
+        current_play = plays.get("currentPlay", {})
+        play_events = current_play.get("playEvents", [])
+        if play_events:
+            last_event = play_events[-1]
+            pitch_data = last_event.get("pitchData", {})
+            coords = pitch_data.get("coordinates", {})
+            last_pitch = {
+                "x": coords.get("pX", 0),  # horizontal (-1.5 to 1.5 ft from center)
+                "y": coords.get("pZ", 0),  # vertical (height in feet)
+                "type": last_event.get("details", {}).get("type", {}).get("code", ""),
+                "speed": last_event.get("pitchData", {}).get("startSpeed", 0),
+                "description": last_event.get("details", {}).get("description", ""),
+                "call": last_event.get("details", {}).get("call", {}).get("description", ""),
+            }
+
+        # Recent pitches for the at-bat
+        pitches = []
+        for ev in play_events:
+            if ev.get("isPitch"):
+                pd = ev.get("pitchData", {})
+                c = pd.get("coordinates", {})
+                pitches.append({
+                    "x": c.get("pX", 0),
+                    "y": c.get("pZ", 0),
+                    "call": ev.get("details", {}).get("call", {}).get("code", ""),
+                    "type": ev.get("details", {}).get("type", {}).get("code", ""),
+                })
+
+        # Inning info
+        inning = linescore.get("currentInning", 0)
+        inning_half = linescore.get("inningHalf", "")
+
+        return jsonify({
+            "available": True,
+            "runners": runners,
+            "count": count,
+            "batter": batter,
+            "pitcher": pitcher,
+            "inning": inning,
+            "inning_half": inning_half,
+            "last_pitch": last_pitch,
+            "pitches": pitches[-10:],  # Last 10 pitches of at-bat
+        })
+    except Exception as e:
+        return jsonify({"available": False, "error": str(e)})
+
+
 @app.route("/api/player/<int:player_id>/statcast")
 def player_statcast(player_id):
     """Get Statcast advanced metrics via pybaseball."""

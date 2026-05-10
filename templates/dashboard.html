@@ -309,6 +309,8 @@ async function loadTeam(id) {
       <div class="team-row"><span class="team-name">${d.live.away}</span><span class="team-score">${d.live.away_score}</span></div>
       <div class="team-row"><span class="team-name">${d.live.home}</span><span class="team-score">${d.live.home_score}</span></div></div>`;
     if (d.live.game_id) {
+      html += `<div id="live-field-zone" class="player-card" style="padding:16px"><div class="loading">Loading field...</div></div>`;
+      setTimeout(() => loadFieldAndZone(d.live.game_id), 100);
       html += `<div class="player-card"><a href="https://www.mlb.com/gameday/${d.live.game_id}" target="_blank" style="display:block;padding:14px 16px;color:var(--blue);text-decoration:none;font-weight:600">📊 Live Box Score on MLB.com →</a>`;
       html += `<a href="https://www.espn.com/mlb/boxscore/_/gameId/${d.live.game_id}" target="_blank" style="display:block;padding:14px 16px;border-top:1px solid var(--border);color:var(--blue);text-decoration:none;font-weight:600">📋 Live Box Score on ESPN →</a></div>`;
     }
@@ -598,6 +600,12 @@ async function renderPlayerLive(id) {
       <div class="team-row"><span class="team-name">${g.away}</span><span class="team-score">${g.away_score}</span></div>
       <div class="team-row"><span class="team-name">${g.home}</span><span class="team-score">${g.home_score}</span></div></div>`;
 
+    // Diamond + Strike Zone
+    if (g.game_id) {
+      html += `<div id="live-field-zone" class="player-card" style="padding:16px"><div class="loading">Loading field...</div></div>`;
+      setTimeout(() => loadFieldAndZone(g.game_id), 100);
+    }
+
     // Player's live game stats
     if (d.player_stats && Object.keys(d.player_stats).length) {
       const s = d.player_stats;
@@ -690,6 +698,73 @@ function filterTabs(active) {
   return `<div class="filter-tabs">${tabs.map(t =>
     `<button onclick="loadPlayerFilter('${t.id}')" class="pill-btn ${active===t.id?'primary':'outline'}">${t.label}</button>`
   ).join('')}</div>`;
+}
+
+// Field Diamond + Strike Zone
+async function loadFieldAndZone(gameId) {
+  const el = document.getElementById('live-field-zone');
+  if (!el) return;
+  try {
+    const r = await fetch(`/api/game/${gameId}/live`);
+    const d = await r.json();
+    if (!d.available) { el.innerHTML = '<div style="color:var(--muted);font-size:12px">Live field data unavailable</div>'; return; }
+
+    const rn = d.runners;
+    const ct = d.count;
+    // Diamond SVG
+    const baseColor = (on) => on ? 'var(--gold)' : 'var(--border)';
+    let html = `<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;justify-content:center">`;
+    // Diamond
+    html += `<div style="text-align:center"><div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">${d.inning_half} ${d.inning}</div>
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <polygon points="50,15 85,50 50,85 15,50" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+        <rect x="43" y="8" width="14" height="14" transform="rotate(45 50 15)" fill="${baseColor(rn.second)}" stroke="var(--muted)" stroke-width="1"/>
+        <rect x="78" y="43" width="14" height="14" transform="rotate(45 85 50)" fill="${baseColor(rn.first)}" stroke="var(--muted)" stroke-width="1"/>
+        <rect x="8" y="43" width="14" height="14" transform="rotate(45 15 50)" fill="${baseColor(rn.third)}" stroke="var(--muted)" stroke-width="1"/>
+        <rect x="45" y="80" width="10" height="10" fill="var(--muted)" rx="1"/>
+      </svg>
+      <div style="display:flex;gap:4px;justify-content:center;margin-top:8px">
+        ${[...Array(3)].map((_,i) => `<div style="width:10px;height:10px;border-radius:50%;background:${i<ct.outs?'var(--red)':'var(--border)'}"></div>`).join('')}
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">${ct.balls}-${ct.strikes} Count • ${ct.outs} Out</div>
+    </div>`;
+
+    // Strike Zone
+    html += `<div style="text-align:center"><div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">Strike Zone</div>
+      <svg width="120" height="140" viewBox="-2 0 4 5">
+        <rect x="-0.83" y="1.5" width="1.66" height="2" fill="none" stroke="var(--muted)" stroke-width="0.03"/>
+        <!-- Zone grid -->
+        <line x1="-0.28" y1="1.5" x2="-0.28" y2="3.5" stroke="var(--border)" stroke-width="0.015"/>
+        <line x1="0.28" y1="1.5" x2="0.28" y2="3.5" stroke="var(--border)" stroke-width="0.015"/>
+        <line x1="-0.83" y1="2.17" x2="0.83" y2="2.17" stroke="var(--border)" stroke-width="0.015"/>
+        <line x1="-0.83" y1="2.83" x2="0.83" y2="2.83" stroke="var(--border)" stroke-width="0.015"/>`;
+
+    // Plot pitches
+    if (d.pitches && d.pitches.length) {
+      d.pitches.forEach((p, i) => {
+        const isLast = i === d.pitches.length - 1;
+        const color = p.call === 'S' || p.call === 'C' || p.call === 'T' ? 'var(--red)' : p.call === 'B' ? 'var(--green)' : p.call === 'X' || p.call === 'E' || p.call === 'D' ? 'var(--blue)' : 'var(--muted)';
+        const radius = isLast ? '0.09' : '0.06';
+        const opacity = isLast ? '1' : '0.5';
+        html += `<circle cx="${p.x}" cy="${5 - p.y}" r="${radius}" fill="${color}" opacity="${opacity}"/>`;
+      });
+    }
+    html += `</svg>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:6px;font-size:9px">
+        <span style="color:var(--red)">● Strike</span><span style="color:var(--green)">● Ball</span><span style="color:var(--blue)">● In Play</span>
+      </div>
+    </div>`;
+    html += `</div>`;
+
+    // Matchup
+    if (d.batter || d.pitcher) {
+      html += `<div style="text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:12px">
+        <span style="color:var(--muted)">AB:</span> <b>${d.batter}</b> <span style="color:var(--muted)">vs</span> <b>${d.pitcher}</b>
+        ${d.last_pitch.speed ? `<div style="margin-top:4px;color:var(--muted)">${d.last_pitch.description||''} — ${d.last_pitch.speed} mph</div>` : ''}
+      </div>`;
+    }
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = ''; }
 }
 
 // Notifications
