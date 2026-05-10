@@ -659,8 +659,19 @@ function showYearDashboard() {
   if (d.anomalies) {
     const yearAnoms = d.anomalies.find(a => a.season === year);
     if (yearAnoms && yearAnoms.flags && yearAnoms.flags.length) {
+      html += '<div class="section-header">🔥 Anomalies</div>';
       yearAnoms.flags.forEach(f => {
         html += `<div class="anomaly ${f.level}"><div>${f.level==='alltime'?'👑 ':'🔥 '}${f.msg}</div>${f.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${f.nugget}</div>`:''}</div>`;
+      });
+    }
+  }
+  // Show red flags for this season
+  if (d.red_flags) {
+    const yearReds = d.red_flags.find(a => a.season === year);
+    if (yearReds && yearReds.flags && yearReds.flags.length) {
+      html += '<div class="section-header">🚩 Red Flags</div>';
+      yearReds.flags.forEach(f => {
+        html += `<div class="anomaly ${f.level}"><div>${f.level==='terrible'?'🚨 ':'⚠️ '}${f.msg}</div>${f.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${f.nugget}</div>`:''}</div>`;
       });
     }
   }

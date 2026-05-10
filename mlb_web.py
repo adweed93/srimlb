@@ -1081,9 +1081,11 @@ def player_year_by_year(player_id):
 
     # Flag standout seasons
     anomalies = []
+    red_flag_seasons = []
     for s in seasons:
         yr = s.get("season", "")
         flags = []
+        bad_flags = []
         if group == "hitting":
             games = int(s.get("gamesPlayed", 0))
             if games < 50:
@@ -1094,6 +1096,9 @@ def player_year_by_year(player_id):
             hits = int(s.get("hits", 0))
             rbi = int(s.get("rbi", 0))
             sb = int(s.get("stolenBases", 0))
+            pa = int(s.get("plateAppearances", 0) or s.get("atBats", 0) or 0)
+            ks = int(s.get("strikeOuts", 0))
+            k_rate = (ks / pa * 100) if pa > 0 else 0
             if hr >= 50:
                 flags.append({"msg": f"{hr} HR in {yr} — 50-HR season", "level": "alltime", "nugget": "Only ~30 50-HR seasons in MLB history"})
             elif hr >= 40:
@@ -1112,6 +1117,19 @@ def player_year_by_year(player_id):
                 flags.append({"msg": f"{rbi} RBI in {yr} — dominant run producer", "level": "alltime", "nugget": "140+ RBI hasn't happened since the early 2000s"})
             if sb >= 60:
                 flags.append({"msg": f"{sb} SB in {yr} — elite speed season", "level": "alltime", "nugget": "60+ SB in a season is historically rare"})
+            # Bad season flags
+            if avg <= .200 and games >= 80:
+                bad_flags.append({"msg": f".{int(avg*1000)} AVG in {yr} — Mendoza Line", "level": "bad", "nugget": "Chris Davis hit .168 in 2018 — the worst ever for a qualified hitter"})
+            elif avg <= .220 and games >= 80:
+                bad_flags.append({"msg": f".{int(avg*1000)} AVG in {yr} — rough season", "level": "bad", "nugget": "Sub-.220 over a full season is replacement-level offense"})
+            if ops <= .600 and games >= 80:
+                bad_flags.append({"msg": f"{ops:.3f} OPS in {yr} — replacement level", "level": "terrible", "nugget": "Sub-.600 OPS is among the worst offensive seasons for a regular"})
+            elif ops <= .650 and games >= 80:
+                bad_flags.append({"msg": f"{ops:.3f} OPS in {yr} — well below average", "level": "bad", "nugget": "League average OPS is .710-.720"})
+            if k_rate >= 35 and pa >= 200:
+                bad_flags.append({"msg": f"{k_rate:.1f}% K rate in {yr} — extreme", "level": "terrible", "nugget": "Among the highest single-season K rates in MLB history"})
+            elif k_rate >= 30 and pa >= 200:
+                bad_flags.append({"msg": f"{k_rate:.1f}% K rate in {yr} — high strikeouts", "level": "bad", "nugget": "30%+ K rate makes sustained production very difficult"})
         elif group == "pitching":
             games = int(s.get("gamesPlayed", 0))
             if games < 10:
@@ -1119,8 +1137,10 @@ def player_year_by_year(player_id):
             era = float(s.get("era", "99") or "99")
             ks = int(s.get("strikeOuts", 0))
             wins = int(s.get("wins", 0))
+            losses = int(s.get("losses", 0))
             ip = float(s.get("inningsPitched", "0").replace(",", "") or "0")
             whip = float(s.get("whip", "99") or "99")
+            bb9 = float(s.get("walksPer9Inn", "0") or "0")
             if era <= 2.00 and ip >= 100:
                 flags.append({"msg": f"{era:.2f} ERA in {yr} — historic", "level": "alltime", "nugget": "A sub-2.00 ERA over 100+ IP is Cy Young-lock territory"})
             elif era <= 2.80 and ip >= 100:
@@ -1133,8 +1153,23 @@ def player_year_by_year(player_id):
                 flags.append({"msg": f"{wins} wins in {yr} — 20-win season", "level": "alert", "nugget": "20-win seasons have become extremely rare in the modern era"})
             if whip <= 0.95 and ip >= 100:
                 flags.append({"msg": f"{whip:.2f} WHIP in {yr} — historic control", "level": "alltime", "nugget": "Sub-0.95 WHIP over 100+ IP is all-time elite"})
+            # Bad season flags
+            if era >= 6.00 and ip >= 50:
+                bad_flags.append({"msg": f"{era:.2f} ERA in {yr} — terrible", "level": "terrible", "nugget": "A 6.00+ ERA over 50+ IP is demotion-worthy. Worst qualified ever: Les Sweetland (7.71 in 1930)"})
+            elif era >= 5.00 and ip >= 80:
+                bad_flags.append({"msg": f"{era:.2f} ERA in {yr} — rough season", "level": "bad", "nugget": "A 5.00+ ERA is back-of-rotation or worse"})
+            if whip >= 1.60 and ip >= 50:
+                bad_flags.append({"msg": f"{whip:.2f} WHIP in {yr} — too many baserunners", "level": "terrible", "nugget": "Nearly 2 baserunners per inning is unsustainable"})
+            elif whip >= 1.40 and ip >= 80:
+                bad_flags.append({"msg": f"{whip:.2f} WHIP in {yr} — below average", "level": "bad", "nugget": "League average WHIP is ~1.30"})
+            if bb9 >= 5.0 and ip >= 50:
+                bad_flags.append({"msg": f"{bb9:.1f} BB/9 in {yr} — severe control issues", "level": "terrible", "nugget": "Walking 5+ per 9 innings is historically bad command"})
+            if losses >= 15 and wins < 10:
+                bad_flags.append({"msg": f"{wins}-{losses} record in {yr}", "level": "bad", "nugget": "A 15+ loss season with fewer than 10 wins is a rough year"})
         if flags:
             anomalies.append({"season": yr, "flags": flags})
+        if bad_flags:
+            red_flag_seasons.append({"season": yr, "flags": bad_flags})
 
     return jsonify({
         "name": info.get("first_name", "") + " " + info.get("last_name", ""),
@@ -1142,6 +1177,7 @@ def player_year_by_year(player_id):
         "team": info.get("current_team", ""),
         "seasons": seasons,
         "anomalies": anomalies,
+        "red_flags": red_flag_seasons,
     })
 
 
