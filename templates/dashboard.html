@@ -489,6 +489,7 @@ async function loadPlayer(id) {
 
   // Anomalies
   if (d.anomalies && d.anomalies.length) {
+    html += '<div class="section-header">🔥 Anomalies</div>';
     d.anomalies.forEach(a => {
       html += `<div class="anomaly ${a.level}"><div>${a.level==='alltime'?'👑 ':'🔥 '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}
       </div>`;
@@ -497,6 +498,7 @@ async function loadPlayer(id) {
 
   // Red flags — bad stats
   if (d.red_flags && d.red_flags.length) {
+    html += '<div class="section-header">🚩 Red Flags</div>';
     d.red_flags.forEach(a => {
       html += `<div class="anomaly ${a.level}"><div>${a.level==='terrible'?'🚨 ':'⚠️ '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}
       </div>`;
@@ -581,12 +583,14 @@ async function loadPlayerFilter(type) {
     html += '</div>';
     // Career anomalies
     if (d.anomalies && d.anomalies.length) {
+      html += '<div class="section-header">🔥 Anomalies</div>';
       d.anomalies.forEach(a => {
         html += `<div class="anomaly ${a.level}"><div>${a.level==='alltime'?'👑 ':'🔥 '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}</div>`;
       });
     }
     // Career red flags
     if (d.red_flags && d.red_flags.length) {
+      html += '<div class="section-header">🚩 Red Flags</div>';
       d.red_flags.forEach(a => {
         html += `<div class="anomaly ${a.level}"><div>${a.level==='terrible'?'🚨 ':'⚠️ '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}</div>`;
       });
