@@ -42,7 +42,13 @@ def search_player():
     if not q:
         return jsonify([])
     results = statsapi.lookup_player(q)
-    return jsonify([{"id": p["id"], "name": p["fullName"], "team": p.get("currentTeam", {}).get("name", "N/A")} for p in results[:10]])
+    # Resolve team names from IDs
+    teams_data = {t["id"]: t["name"] for t in statsapi.get("teams", {"sportIds": 1})["teams"]}
+    return jsonify([{
+        "id": p["id"],
+        "name": p["fullName"],
+        "team": teams_data.get(p.get("currentTeam", {}).get("id"), "Free Agent")
+    } for p in results[:10]])
 
 
 @app.route("/api/search/team")

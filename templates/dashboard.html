@@ -211,6 +211,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 </div>
 
 <script>
+let _currentPlayerId = null;
+
 function switchTab(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id===id));
   document.querySelectorAll('.nav-item').forEach((n,i) => {
@@ -456,7 +458,6 @@ async function loadPlayer(id) {
 }
 
 // Store current player ID for filter switching
-let _currentPlayerId = null;
 
 async function loadPlayerFilter(type) {
   if (!_currentPlayerId) return;
