@@ -569,6 +569,24 @@ async function loadPlayerFilter(type) {
     html += `<div class="player-card"><div class="player-header" style="display:flex;align-items:center;gap:12px">${playerImg(_currentPlayerId, 50)}<div><div class="name">${d.name}</div><div class="meta">${d.position} • Career Totals</div></div></div>`;
     html += buildStatDashboard(d.stats, d.position);
     html += '</div>';
+    // Career anomalies
+    if (d.anomalies && d.anomalies.length) {
+      d.anomalies.forEach(a => {
+        html += `<div class="anomaly ${a.level}"><div>${a.level==='alltime'?'👑 ':'🔥 '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}</div>`;
+      });
+    }
+    // Career comparisons
+    if (d.comparisons && d.comparisons.length) {
+      html += '<div class="section-header">vs. All-Time Career Records</div><div class="player-card">';
+      d.comparisons.forEach(c => {
+        if (c.stat) {
+          const pct = Math.min(c.pct, 100);
+          const barColor = pct >= 90 ? 'var(--gold)' : pct >= 70 ? 'var(--green)' : 'var(--blue)';
+          html += `<div class="record-compare"><div class="rc-header"><span class="rc-stat">${c.stat}: <span style="color:var(--accent)">${c.current}</span></span><span class="rc-pct">${c.pct}% of record</span></div><div class="rc-bar"><div class="rc-bar-fill" style="background:${barColor};width:${pct}%"></div></div><div class="rc-detail">Record: ${c.record} — ${c.holder}</div></div>`;
+        }
+      });
+      html += '</div>';
+    }
     document.getElementById('stats-content').innerHTML = html;
   } else {
     // yearByYear - fetch and show dropdown
@@ -599,6 +617,15 @@ function showYearDashboard() {
   let html = `<div class="player-card"><div class="player-header" style="display:flex;align-items:center;gap:12px">${playerImg(_currentPlayerId, 50)}<div><div class="name">${d.name}</div><div class="meta">${d.position} • ${year} Season</div></div></div>`;
   html += buildStatDashboard(s, d.position);
   html += '</div>';
+  // Show anomaly flags for this season
+  if (d.anomalies) {
+    const yearAnoms = d.anomalies.find(a => a.season === year);
+    if (yearAnoms && yearAnoms.flags && yearAnoms.flags.length) {
+      yearAnoms.flags.forEach(f => {
+        html += `<div class="anomaly ${f.level}"><div>${f.level==='alltime'?'👑 ':'🔥 '}${f.msg}</div>${f.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${f.nugget}</div>`:''}</div>`;
+      });
+    }
+  }
   document.getElementById('year-dashboard').innerHTML = html;
 }
 

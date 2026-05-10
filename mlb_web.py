@@ -551,36 +551,230 @@ def player_stats(player_id):
 
 @app.route("/api/player/<int:player_id>/career")
 def player_career(player_id):
-    """Get career stats for a player."""
+    """Get career stats for a player with career-context anomalies."""
     info = statsapi.player_stat_data(player_id, type="career")
     stats = {}
+    group = ""
     for sg in info.get("stats", []):
-        if sg["group"] in ("hitting", "pitching"):
+        if sg["group"] == "hitting":
             stats = sg.get("stats", {})
+            group = "hitting"
             break
+        elif sg["group"] == "pitching":
+            stats = sg.get("stats", {})
+            group = "pitching"
+            break
+
+    anomalies = []
+    comparisons = []
+
+    # Career all-time records for context
+    CAREER_RECORDS = {
+        "hr": {"record": 762, "holder": "Barry Bonds", "notable": [
+            {"val": 755, "holder": "Hank Aaron"}, {"val": 714, "holder": "Babe Ruth"},
+            {"val": 660, "holder": "Willie Mays"}, {"val": 500, "holder": "500 HR Club"},
+        ]},
+        "hits": {"record": 4256, "holder": "Pete Rose", "notable": [
+            {"val": 3771, "holder": "Hank Aaron"}, {"val": 3000, "holder": "3000 Hit Club"},
+        ]},
+        "rbi": {"record": 2297, "holder": "Hank Aaron", "notable": [
+            {"val": 2214, "holder": "Babe Ruth"}, {"val": 1996, "holder": "Cap Anson"},
+        ]},
+        "sb": {"record": 1406, "holder": "Rickey Henderson", "notable": [
+            {"val": 938, "holder": "Lou Brock"}, {"val": 500, "holder": "500 SB Club"},
+        ]},
+        "avg": {"record": .367, "holder": "Ty Cobb", "notable": [
+            {"val": .358, "holder": "Rogers Hornsby"}, {"val": .345, "holder": "Ted Williams"},
+        ]},
+        "wins": {"record": 511, "holder": "Cy Young", "notable": [
+            {"val": 417, "holder": "Walter Johnson"}, {"val": 373, "holder": "Grover Alexander"},
+            {"val": 300, "holder": "300 Win Club"},
+        ]},
+        "k_pitch": {"record": 5714, "holder": "Nolan Ryan", "notable": [
+            {"val": 4875, "holder": "Randy Johnson"}, {"val": 3000, "holder": "3000 K Club"},
+        ]},
+        "era": {"record": 1.82, "holder": "Ed Walsh", "notable": [
+            {"val": 2.13, "holder": "Christy Mathewson"}, {"val": 2.17, "holder": "Walter Johnson"},
+        ]},
+        "shutouts": {"record": 110, "holder": "Walter Johnson", "notable": [
+            {"val": 90, "holder": "Grover Alexander"}, {"val": 79, "holder": "Christy Mathewson"},
+        ]},
+    }
+
+    if group == "hitting":
+        hr = int(stats.get("homeRuns", 0))
+        hits = int(stats.get("hits", 0))
+        rbi = int(stats.get("rbi", 0))
+        sb = int(stats.get("stolenBases", 0))
+        avg = float(stats.get("avg", "0") or "0")
+        ops = float(stats.get("ops", "0") or "0")
+        games = int(stats.get("gamesPlayed", 0))
+
+        if hr >= 500:
+            anomalies.append({"msg": f"{hr} career HR — 500 HR Club", "level": "alltime", "nugget": "Only 28 players in MLB history have hit 500+ career home runs"})
+        elif hr >= 400:
+            anomalies.append({"msg": f"{hr} career HR — elite power", "level": "alert", "nugget": "Fewer than 60 players have reached 400 career HR"})
+        if hr >= 300:
+            comparisons.append({"stat": "Career HR", "current": str(hr), "record": "762", "holder": CAREER_RECORDS["hr"]["holder"], "pct": round(hr / 762 * 100)})
+
+        if hits >= 3000:
+            anomalies.append({"msg": f"{hits} career hits — 3000 Hit Club", "level": "alltime", "nugget": "Only 33 players have reached 3,000 career hits"})
+        elif hits >= 2500:
+            anomalies.append({"msg": f"{hits} career hits — approaching 3000", "level": "alert", "nugget": "3,000 hits is a near-automatic Hall of Fame induction"})
+        if hits >= 2000:
+            comparisons.append({"stat": "Career Hits", "current": str(hits), "record": "4256", "holder": CAREER_RECORDS["hits"]["holder"], "pct": round(hits / 4256 * 100)})
+
+        if rbi >= 1500:
+            anomalies.append({"msg": f"{rbi} career RBI — all-time elite", "level": "alltime", "nugget": "Fewer than 30 players have driven in 1,500+ runs"})
+        elif rbi >= 1000:
+            anomalies.append({"msg": f"{rbi} career RBI", "level": "alert", "nugget": "1,000 career RBI is a benchmark for sustained run production"})
+
+        if sb >= 500:
+            anomalies.append({"msg": f"{sb} career SB — all-time speed", "level": "alltime", "nugget": "Only 15 players have stolen 500+ bases in their career"})
+        elif sb >= 300:
+            anomalies.append({"msg": f"{sb} career SB — elite baserunner", "level": "alert", "nugget": "300+ career SB puts you among the fastest players ever"})
+        if sb >= 200:
+            comparisons.append({"stat": "Career SB", "current": str(sb), "record": "1406", "holder": CAREER_RECORDS["sb"]["holder"], "pct": round(sb / 1406 * 100)})
+
+        if avg >= .330 and games >= 500:
+            anomalies.append({"msg": f".{int(avg*1000)} career AVG — all-time great", "level": "alltime", "nugget": "Only Ty Cobb (.367), Rogers Hornsby (.358), and Joe Jackson (.356) have career averages above .350"})
+        elif avg >= .300 and games >= 500:
+            anomalies.append({"msg": f".{int(avg*1000)} career AVG — .300 career hitter", "level": "alert", "nugget": "A .300+ career average is increasingly rare in the modern era"})
+
+        if ops >= 1.000 and games >= 500:
+            anomalies.append({"msg": f"{ops:.3f} career OPS — inner circle", "level": "alltime", "nugget": "Only Babe Ruth (1.164), Ted Williams (1.116), and Lou Gehrig (1.080) have career OPS above 1.000"})
+        elif ops >= .900 and games >= 500:
+            anomalies.append({"msg": f"{ops:.3f} career OPS — Hall of Fame caliber", "level": "alert", "nugget": "A .900+ career OPS is typical of Hall of Fame hitters"})
+
+    elif group == "pitching":
+        wins = int(stats.get("wins", 0))
+        ks = int(stats.get("strikeOuts", 0))
+        era = float(stats.get("era", "99") or "99")
+        shutouts = int(stats.get("shutouts", 0))
+        ip = float(stats.get("inningsPitched", "0").replace(",", "") or "0")
+        whip = float(stats.get("whip", "99") or "99")
+        games = int(stats.get("gamesPlayed", 0))
+
+        if wins >= 300:
+            anomalies.append({"msg": f"{wins} career wins — 300 Win Club", "level": "alltime", "nugget": "Only 24 pitchers have won 300+ games. Likely never to be reached again in the modern era"})
+        elif wins >= 200:
+            anomalies.append({"msg": f"{wins} career wins", "level": "alert", "nugget": "200 wins was once a Hall of Fame benchmark — increasingly rare with modern usage"})
+        if wins >= 150:
+            comparisons.append({"stat": "Career W", "current": str(wins), "record": "511", "holder": CAREER_RECORDS["wins"]["holder"], "pct": round(wins / 511 * 100)})
+
+        if ks >= 3000:
+            anomalies.append({"msg": f"{ks} career K — 3000 Strikeout Club", "level": "alltime", "nugget": "Only 18 pitchers have struck out 3,000+ batters"})
+        elif ks >= 2000:
+            anomalies.append({"msg": f"{ks} career K — elite strikeout pitcher", "level": "alert", "nugget": "2,000+ career strikeouts marks a dominant career"})
+        if ks >= 1500:
+            comparisons.append({"stat": "Career K", "current": str(ks), "record": "5714", "holder": CAREER_RECORDS["k_pitch"]["holder"], "pct": round(ks / 5714 * 100)})
+
+        if era <= 2.50 and ip >= 1000:
+            anomalies.append({"msg": f"{era:.2f} career ERA — all-time elite", "level": "alltime", "nugget": "A sub-2.50 career ERA over 1000+ IP is dead-ball era territory"})
+        elif era <= 3.00 and ip >= 1000:
+            anomalies.append({"msg": f"{era:.2f} career ERA — dominant", "level": "alert", "nugget": "A sub-3.00 career ERA is Hall of Fame caliber in any era"})
+
+        if shutouts >= 50:
+            anomalies.append({"msg": f"{shutouts} career shutouts — all-time great", "level": "alltime", "nugget": f"Walter Johnson holds the record with 110. Only 10 pitchers have 50+"})
+            comparisons.append({"stat": "Shutouts", "current": str(shutouts), "record": "110", "holder": CAREER_RECORDS["shutouts"]["holder"], "pct": round(shutouts / 110 * 100)})
+
+        if whip <= 1.10 and ip >= 1000:
+            anomalies.append({"msg": f"{whip:.2f} career WHIP — elite", "level": "alltime", "nugget": "A career WHIP under 1.10 over 1000+ IP is historically rare"})
+
     return jsonify({
         "name": info.get("first_name", "") + " " + info.get("last_name", ""),
         "position": info.get("position", ""),
         "stats": stats,
+        "anomalies": anomalies,
+        "comparisons": comparisons,
     })
 
 
 @app.route("/api/player/<int:player_id>/yearByYear")
 def player_year_by_year(player_id):
-    """Get year-by-year historical stats."""
+    """Get year-by-year historical stats with standout season flags."""
     info = statsapi.player_stat_data(player_id, type="yearByYear")
     seasons = []
+    group = ""
     for sg in info.get("stats", []):
-        if sg["group"] in ("hitting", "pitching"):
+        if sg["group"] == "hitting":
+            group = "hitting"
             s = sg.get("stats", {})
             if s:
                 s["season"] = sg.get("season", "")
+                s["team"] = sg.get("team", "")
                 seasons.append(s)
+        elif sg["group"] == "pitching":
+            group = "pitching"
+            s = sg.get("stats", {})
+            if s:
+                s["season"] = sg.get("season", "")
+                s["team"] = sg.get("team", "")
+                seasons.append(s)
+
+    # Flag standout seasons
+    anomalies = []
+    for s in seasons:
+        yr = s.get("season", "")
+        flags = []
+        if group == "hitting":
+            games = int(s.get("gamesPlayed", 0))
+            if games < 50:
+                continue
+            hr = int(s.get("homeRuns", 0))
+            avg = float(s.get("avg", "0") or "0")
+            ops = float(s.get("ops", "0") or "0")
+            hits = int(s.get("hits", 0))
+            rbi = int(s.get("rbi", 0))
+            sb = int(s.get("stolenBases", 0))
+            if hr >= 50:
+                flags.append({"msg": f"{hr} HR in {yr} — 50-HR season", "level": "alltime", "nugget": "Only ~30 50-HR seasons in MLB history"})
+            elif hr >= 40:
+                flags.append({"msg": f"{hr} HR in {yr} — elite power season", "level": "alert", "nugget": "A 40-HR season is a top-10 power finish most years"})
+            if avg >= .350 and games >= 100:
+                flags.append({"msg": f".{int(avg*1000)} AVG in {yr} — historic", "level": "alltime", "nugget": "Fewer than 5 players have hit .350+ in a season since 2000"})
+            elif avg >= .320 and games >= 100:
+                flags.append({"msg": f".{int(avg*1000)} AVG in {yr} — batting title contender", "level": "alert", "nugget": "Typically wins or contends for the batting title"})
+            if ops >= 1.050 and games >= 100:
+                flags.append({"msg": f"{ops:.3f} OPS in {yr} — MVP-caliber", "level": "alltime", "nugget": "A 1.050+ OPS season is top-5 in baseball that year"})
+            elif ops >= .950 and games >= 100:
+                flags.append({"msg": f"{ops:.3f} OPS in {yr} — All-Star level", "level": "alert", "nugget": "A .950+ OPS is typically top-15 in the league"})
+            if hits >= 220:
+                flags.append({"msg": f"{hits} hits in {yr} — 220+ hit season", "level": "alltime", "nugget": "Only ~50 220-hit seasons in modern history"})
+            if rbi >= 140:
+                flags.append({"msg": f"{rbi} RBI in {yr} — dominant run producer", "level": "alltime", "nugget": "140+ RBI hasn't happened since the early 2000s"})
+            if sb >= 60:
+                flags.append({"msg": f"{sb} SB in {yr} — elite speed season", "level": "alltime", "nugget": "60+ SB in a season is historically rare"})
+        elif group == "pitching":
+            games = int(s.get("gamesPlayed", 0))
+            if games < 10:
+                continue
+            era = float(s.get("era", "99") or "99")
+            ks = int(s.get("strikeOuts", 0))
+            wins = int(s.get("wins", 0))
+            ip = float(s.get("inningsPitched", "0").replace(",", "") or "0")
+            whip = float(s.get("whip", "99") or "99")
+            if era <= 2.00 and ip >= 100:
+                flags.append({"msg": f"{era:.2f} ERA in {yr} — historic", "level": "alltime", "nugget": "A sub-2.00 ERA over 100+ IP is Cy Young-lock territory"})
+            elif era <= 2.80 and ip >= 100:
+                flags.append({"msg": f"{era:.2f} ERA in {yr} — ace season", "level": "alert", "nugget": "Sub-2.80 ERA typically finishes top-5 in Cy Young voting"})
+            if ks >= 300:
+                flags.append({"msg": f"{ks} K in {yr} — 300-K season", "level": "alltime", "nugget": "Only 18 300-K seasons in MLB history"})
+            elif ks >= 250:
+                flags.append({"msg": f"{ks} K in {yr} — dominant strikeout season", "level": "alert", "nugget": "250+ K is an ace-level achievement"})
+            if wins >= 20:
+                flags.append({"msg": f"{wins} wins in {yr} — 20-win season", "level": "alert", "nugget": "20-win seasons have become extremely rare in the modern era"})
+            if whip <= 0.95 and ip >= 100:
+                flags.append({"msg": f"{whip:.2f} WHIP in {yr} — historic control", "level": "alltime", "nugget": "Sub-0.95 WHIP over 100+ IP is all-time elite"})
+        if flags:
+            anomalies.append({"season": yr, "flags": flags})
+
     return jsonify({
         "name": info.get("first_name", "") + " " + info.get("last_name", ""),
         "position": info.get("position", ""),
         "team": info.get("current_team", ""),
         "seasons": seasons,
+        "anomalies": anomalies,
     })
 
 
