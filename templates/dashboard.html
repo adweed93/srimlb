@@ -469,20 +469,29 @@ async function loadPlayer(id) {
       <div class="stat-cell"><div class="val">${s.inningsPitched||'0'}</div><div class="lbl">IP</div></div>
       <div class="stat-cell"><div class="val">${s.gamesPlayed||0}</div><div class="lbl">G</div></div>
       <div class="stat-cell"><div class="val">${s.gamesStarted||0}</div><div class="lbl">GS</div></div>
-    </div><div class="stat-section-label">Batted Ball</div><div class="stat-row">
+      <div class="stat-cell"><div class="val">${s.winPercentage||'---'}</div><div class="lbl">W%</div></div>
+      <div class="stat-cell"><div class="val">${s.earnedRuns||0}</div><div class="lbl">ER</div></div>
+    </div><div class="stat-section-label">Strikeouts & Walks</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.strikeOuts||0}</div><div class="lbl">K</div></div>
       <div class="stat-cell"><div class="val">${s.baseOnBalls||0}</div><div class="lbl">BB</div></div>
+      <div class="stat-cell"><div class="val">${s.strikeoutWalkRatio||'---'}</div><div class="lbl">K/BB</div></div>
+      <div class="stat-cell"><div class="val">${s.strikeoutsPer9Inn||'---'}</div><div class="lbl">K/9</div></div>
+      <div class="stat-cell"><div class="val">${s.walksPer9Inn||'---'}</div><div class="lbl">BB/9</div></div>
+      <div class="stat-cell"><div class="val">${s.hitBatsmen||s.hitByPitch||0}</div><div class="lbl">HBP</div></div>
+    </div><div class="stat-section-label">Batted Ball</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.hits||0}</div><div class="lbl">H</div></div>
       <div class="stat-cell"><div class="val">${s.homeRuns||0}</div><div class="lbl">HR</div></div>
       <div class="stat-cell"><div class="val">${s.avg||'---'}</div><div class="lbl">BAA</div></div>
       <div class="stat-cell"><div class="val">${s.obp||'---'}</div><div class="lbl">OBP Agst</div></div>
-    </div><div class="stat-section-label">Efficiency</div><div class="stat-row">
-      <div class="stat-cell"><div class="val">${s.strikeoutWalkRatio||'---'}</div><div class="lbl">K/BB</div></div>
-      <div class="stat-cell"><div class="val">${s.strikeoutsPer9Inn||'---'}</div><div class="lbl">K/9</div></div>
-      <div class="stat-cell"><div class="val">${s.walksPer9Inn||'---'}</div><div class="lbl">BB/9</div></div>
       <div class="stat-cell"><div class="val">${s.hitsPer9Inn||'---'}</div><div class="lbl">H/9</div></div>
       <div class="stat-cell"><div class="val">${s.homeRunsPer9||'---'}</div><div class="lbl">HR/9</div></div>
+    </div><div class="stat-section-label">Durability & Extras</div><div class="stat-row">
+      <div class="stat-cell"><div class="val">${s.completeGames||0}</div><div class="lbl">CG</div></div>
+      <div class="stat-cell"><div class="val">${s.shutouts||0}</div><div class="lbl">SHO</div></div>
       <div class="stat-cell"><div class="val">${s.saves||0}</div><div class="lbl">SV</div></div>
+      <div class="stat-cell"><div class="val">${s.holds||0}</div><div class="lbl">HLD</div></div>
+      <div class="stat-cell"><div class="val">${s.wildPitches||0}</div><div class="lbl">WP</div></div>
+      <div class="stat-cell"><div class="val">${s.battersFaced||0}</div><div class="lbl">BF</div></div>
     </div>`;
   }
   html += '</div>';
@@ -714,20 +723,29 @@ function buildStatDashboard(s, position) {
       <div class="stat-cell"><div class="val">${s.inningsPitched||'0'}</div><div class="lbl">IP</div></div>
       <div class="stat-cell"><div class="val">${s.gamesPlayed||0}</div><div class="lbl">G</div></div>
       <div class="stat-cell"><div class="val">${s.gamesStarted||0}</div><div class="lbl">GS</div></div>
-    </div><div class="stat-section-label">Batted Ball</div><div class="stat-row">
+      <div class="stat-cell"><div class="val">${s.winPercentage||'---'}</div><div class="lbl">W%</div></div>
+      <div class="stat-cell"><div class="val">${s.earnedRuns||0}</div><div class="lbl">ER</div></div>
+    </div><div class="stat-section-label">Strikeouts & Walks</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.strikeOuts||0}</div><div class="lbl">K</div></div>
       <div class="stat-cell"><div class="val">${s.baseOnBalls||0}</div><div class="lbl">BB</div></div>
+      <div class="stat-cell"><div class="val">${s.strikeoutWalkRatio||'---'}</div><div class="lbl">K/BB</div></div>
+      <div class="stat-cell"><div class="val">${s.strikeoutsPer9Inn||'---'}</div><div class="lbl">K/9</div></div>
+      <div class="stat-cell"><div class="val">${s.walksPer9Inn||'---'}</div><div class="lbl">BB/9</div></div>
+      <div class="stat-cell"><div class="val">${s.hitBatsmen||s.hitByPitch||0}</div><div class="lbl">HBP</div></div>
+    </div><div class="stat-section-label">Batted Ball</div><div class="stat-row">
       <div class="stat-cell"><div class="val">${s.hits||0}</div><div class="lbl">H</div></div>
       <div class="stat-cell"><div class="val">${s.homeRuns||0}</div><div class="lbl">HR</div></div>
       <div class="stat-cell"><div class="val">${s.avg||'---'}</div><div class="lbl">BAA</div></div>
       <div class="stat-cell"><div class="val">${s.obp||'---'}</div><div class="lbl">OBP Agst</div></div>
-    </div><div class="stat-section-label">Efficiency</div><div class="stat-row">
-      <div class="stat-cell"><div class="val">${s.strikeoutWalkRatio||'---'}</div><div class="lbl">K/BB</div></div>
-      <div class="stat-cell"><div class="val">${s.strikeoutsPer9Inn||'---'}</div><div class="lbl">K/9</div></div>
-      <div class="stat-cell"><div class="val">${s.walksPer9Inn||'---'}</div><div class="lbl">BB/9</div></div>
       <div class="stat-cell"><div class="val">${s.hitsPer9Inn||'---'}</div><div class="lbl">H/9</div></div>
       <div class="stat-cell"><div class="val">${s.homeRunsPer9||'---'}</div><div class="lbl">HR/9</div></div>
+    </div><div class="stat-section-label">Durability & Extras</div><div class="stat-row">
+      <div class="stat-cell"><div class="val">${s.completeGames||0}</div><div class="lbl">CG</div></div>
+      <div class="stat-cell"><div class="val">${s.shutouts||0}</div><div class="lbl">SHO</div></div>
       <div class="stat-cell"><div class="val">${s.saves||0}</div><div class="lbl">SV</div></div>
+      <div class="stat-cell"><div class="val">${s.holds||0}</div><div class="lbl">HLD</div></div>
+      <div class="stat-cell"><div class="val">${s.wildPitches||0}</div><div class="lbl">WP</div></div>
+      <div class="stat-cell"><div class="val">${s.battersFaced||0}</div><div class="lbl">BF</div></div>
     </div>`;
   }
   return html;
