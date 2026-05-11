@@ -1023,6 +1023,70 @@ async function loadBoxScore(gameId) {
   _boxRefreshTimer = setInterval(() => { if (document.querySelector('#stats.active')) renderBoxScore(gameId); }, 15000);
 }
 
+function renderDiamond(runners, count) {
+  const on = 'var(--green)';
+  const off = '#333';
+  const first = runners.first ? on : off;
+  const second = runners.second ? on : off;
+  const third = runners.third ? on : off;
+  // Balls/Strikes/Outs indicators
+  let bso = '<div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--muted)">';
+  bso += '<span>B ';
+  for (let i = 0; i < 4; i++) bso += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i < count.balls ? '#4caf50' : '#333'}"></span>`;
+  bso += '</span><span>S ';
+  for (let i = 0; i < 3; i++) bso += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i < count.strikes ? '#f44336' : '#333'}"></span>`;
+  bso += '</span><span>O ';
+  for (let i = 0; i < 3; i++) bso += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i < count.outs ? '#ff9800' : '#333'}"></span>`;
+  bso += '</span></div>';
+  return `<div style="display:flex;flex-direction:column;align-items:center">
+    <svg width="80" height="80" viewBox="0 0 100 100">
+      <rect x="35" y="10" width="30" height="30" rx="2" transform="rotate(45 50 25)" fill="${second}" stroke="#555" stroke-width="1.5"/>
+      <rect x="55" y="30" width="30" height="30" rx="2" transform="rotate(45 70 45)" fill="${first}" stroke="#555" stroke-width="1.5"/>
+      <rect x="15" y="30" width="30" height="30" rx="2" transform="rotate(45 30 45)" fill="${third}" stroke="#555" stroke-width="1.5"/>
+      <polygon points="50,75 45,80 50,85 55,80" fill="#fff" stroke="#555" stroke-width="1"/>
+    </svg>${bso}</div>`;
+}
+
+function renderStrikeZone(pitches, lastPitch) {
+  if (!pitches || !pitches.length) return '';
+  // Zone: pX ranges roughly -1.5 to 1.5, pZ roughly 1.5 to 3.5
+  // Map to SVG 0-120 with zone box in center
+  const w = 120, h = 140, pad = 20;
+  const zoneL = pad, zoneR = w - pad, zoneT = pad, zoneB = h - pad;
+  function mapX(px) { return pad + ((px + 1.5) / 3.0) * (w - 2*pad); }
+  function mapY(pz) { return pad + ((3.8 - pz) / 2.6) * (h - 2*pad); }
+  let dots = '';
+  pitches.forEach((p, i) => {
+    if (p.x === 0 && p.y === 0) return;
+    const cx = mapX(p.x), cy = mapY(p.y);
+    const isLast = i === pitches.length - 1;
+    const color = p.call === 'C' ? '#f44336' : p.call === 'B' ? '#4caf50' : p.call === 'S' ? '#ff9800' : p.call === 'X' ? '#2196f3' : '#888';
+    const r = isLast ? 6 : 4;
+    const opacity = isLast ? 1 : 0.6;
+    dots += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" opacity="${opacity}" stroke="${isLast?'#fff':'none'}" stroke-width="${isLast?1.5:0}"/>`;
+  });
+  let desc = '';
+  if (lastPitch && lastPitch.speed) {
+    desc = `<div style="font-size:10px;color:var(--muted);margin-top:4px;text-align:center">${lastPitch.speed} mph ${lastPitch.type || ''} — ${lastPitch.call || ''}</div>`;
+  }
+  return `<div style="display:flex;flex-direction:column;align-items:center">
+    <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+      <rect x="${zoneL}" y="${zoneT}" width="${zoneR-zoneL}" height="${zoneB-zoneT}" fill="none" stroke="#555" stroke-width="1.5"/>
+      <line x1="${zoneL+(zoneR-zoneL)/3}" y1="${zoneT}" x2="${zoneL+(zoneR-zoneL)/3}" y2="${zoneB}" stroke="#333" stroke-width="0.5"/>
+      <line x1="${zoneL+2*(zoneR-zoneL)/3}" y1="${zoneT}" x2="${zoneL+2*(zoneR-zoneL)/3}" y2="${zoneB}" stroke="#333" stroke-width="0.5"/>
+      <line x1="${zoneL}" y1="${zoneT+(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
+      <line x1="${zoneL}" y1="${zoneT+2*(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+2*(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
+      ${dots}
+    </svg>${desc}
+    <div style="display:flex;gap:8px;font-size:9px;color:var(--muted);margin-top:2px">
+      <span><span style="color:#f44336">●</span> Called</span>
+      <span><span style="color:#ff9800">●</span> Swing</span>
+      <span><span style="color:#4caf50">●</span> Ball</span>
+      <span><span style="color:#2196f3">●</span> In Play</span>
+    </div>
+  </div>`;
+}
+
 async function renderBoxScore(gameId) {
   const r = await fetch(`/api/game/${gameId}/boxscore`);
   const d = await r.json();
@@ -1032,6 +1096,26 @@ async function renderBoxScore(gameId) {
 
   // Linescore
   html += `<div class="player-card" style="overflow-x:auto"><pre style="padding:12px;font-size:11px;color:var(--text);white-space:pre;font-family:monospace;margin:0">${d.linescore}</pre></div>`;
+
+  // Live diamond + strike zone (only for in-progress games)
+  try {
+    const lr = await fetch(`/api/game/${gameId}/live`);
+    const live = await lr.json();
+    if (live.available) {
+      html += `<div class="player-card" style="padding:16px;display:flex;align-items:flex-start;justify-content:center;gap:24px;flex-wrap:wrap">`;
+      html += `<div style="text-align:center">`;
+      html += `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">${live.inning_half || ''} ${live.inning || ''}</div>`;
+      html += renderDiamond(live.runners, live.count);
+      html += `<div style="margin-top:8px;font-size:12px;font-weight:600;color:var(--text)">${live.batter || ''}</div>`;
+      html += `<div style="font-size:11px;color:var(--muted)">vs ${live.pitcher || ''}</div>`;
+      html += `</div>`;
+      html += `<div style="text-align:center">`;
+      html += `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Strike Zone</div>`;
+      html += renderStrikeZone(live.pitches, live.last_pitch);
+      html += `</div>`;
+      html += `</div>`;
+    }
+  } catch(e) {}
 
   // Away Batting
   html += `<div class="section-header">${teamLogo(d.away_id)} ${d.away_team} — Batting</div>`;
