@@ -222,3 +222,25 @@
 - "Show All X Games ▼" button expands to reveal full upcoming schedule
 - Each entry: vs/@ badge, opponent name, date, time, opponent team logo
 - **Commit**: `602de7a`
+
+
+### Bugfix: Box Score Endpoint Returning Empty Data
+- **Problem**: Clicking any game to view its box score showed empty tables — no batters or pitchers displayed
+- **Root Cause**: `statsapi.boxscore_data()` returns `awayBatters`/`homeBatters`/`awayPitchers`/`homePitchers` as a list of dicts (with a header row where `personId=0`). The code incorrectly treated them as a list of player IDs and tried to look them up in a separate dict (which didn't exist), so every lookup returned `None`.
+- **Fix**: Iterate the list directly, skip entries where `personId == 0` (header rows), and read stats from each dict in the list.
+- **Commit**: `475fb1b`
+
+
+### Enhancement: Live Diamond & Strike Zone in Box Score
+- Box score view now shows a **live diamond graphic** with runner positions (lit green when occupied) for in-progress games
+- **Ball/Strike/Out indicators** (colored dots: green=balls, red=strikes, orange=outs)
+- **Current matchup** displayed: batter name vs pitcher name, inning/half
+- **Strike zone SVG** showing all pitches from the current at-bat with color coding:
+  - Red = called strike, Orange = swinging strike, Green = ball, Blue = in play
+  - Last pitch highlighted with white border and larger dot
+  - 9-zone grid overlay for reference
+  - Pitch speed and call description below the zone
+- Only appears for live games (gracefully hidden for final games via try/catch)
+- Uses existing `/api/game/<id>/live` endpoint (MLB live feed API)
+- Auto-refreshes with the 15s box score timer
+- **Commit**: `3451c20`

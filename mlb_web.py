@@ -1481,6 +1481,56 @@ def game_live_feed(game_id):
         return jsonify({"available": False, "error": str(e)})
 
 
+@app.route("/api/game/demo/live")
+def game_live_demo():
+    """Demo endpoint with fake live data to preview diamond + strike zone."""
+    return jsonify({
+        "available": True,
+        "runners": {"first": True, "second": True, "third": False},
+        "count": {"balls": 2, "strikes": 1, "outs": 1},
+        "batter": "Gunnar Henderson",
+        "pitcher": "Gerrit Cole",
+        "inning": 6,
+        "inning_half": "Top",
+        "last_pitch": {"x": 0.3, "y": 2.8, "type": "FF", "speed": 97.4, "description": "Foul", "call": "Foul"},
+        "pitches": [
+            {"x": -0.5, "y": 3.2, "call": "B"},
+            {"x": 0.1, "y": 2.1, "call": "C"},
+            {"x": 0.8, "y": 1.8, "call": "B"},
+            {"x": -0.2, "y": 2.5, "call": "S"},
+            {"x": 0.3, "y": 2.8, "call": "S"},
+        ],
+    })
+
+
+@app.route("/api/game/demo/boxscore")
+def game_boxscore_demo():
+    """Demo boxscore with fake data to preview the full box score view."""
+    return jsonify({
+        "available": True,
+        "away_team": "Orioles", "home_team": "Yankees",
+        "away_id": 110, "home_id": 147,
+        "linescore": "         1  2  3  4  5  6  7  8  9  R  H  E\nOrioles  0  2  0  1  0  3  -  -  -  6  9  0\nYankees  1  0  0  0  2  0  -  -  -  3  5  1",
+        "away_batters": [
+            {"id": 683002, "name": "Henderson", "pos": "SS", "ab": "4", "r": "2", "h": "3", "rbi": "2", "bb": "0", "k": "0", "avg": ".285"},
+            {"id": 663728, "name": "Rutschman", "pos": "C", "ab": "3", "r": "1", "h": "2", "rbi": "1", "bb": "1", "k": "0", "avg": ".318"},
+            {"id": 670541, "name": "Santander", "pos": "RF", "ab": "4", "r": "1", "h": "1", "rbi": "2", "bb": "0", "k": "1", "avg": ".267"},
+        ],
+        "home_batters": [
+            {"id": 592450, "name": "Judge", "pos": "RF", "ab": "3", "r": "1", "h": "2", "rbi": "1", "bb": "1", "k": "0", "avg": ".301"},
+            {"id": 718934, "name": "Soto", "pos": "LF", "ab": "4", "r": "1", "h": "1", "rbi": "1", "bb": "0", "k": "2", "avg": ".289"},
+            {"id": 650402, "name": "Volpe", "pos": "SS", "ab": "3", "r": "0", "h": "1", "rbi": "0", "bb": "0", "k": "1", "avg": ".245"},
+        ],
+        "away_pitchers": [
+            {"id": 669203, "name": "Rodriguez", "ip": "5.2", "h": "4", "r": "3", "er": "3", "bb": "2", "k": "7", "era": "3.45"},
+        ],
+        "home_pitchers": [
+            {"id": 543037, "name": "Cole", "ip": "5.0", "h": "7", "r": "5", "er": "5", "bb": "1", "k": "6", "era": "4.12"},
+            {"id": 622491, "name": "Holmes", "ip": "1.0", "h": "2", "r": "1", "er": "1", "bb": "0", "k": "1", "era": "3.86"},
+        ],
+    })
+
+
 @app.route("/api/player/<int:player_id>/statcast")
 def player_statcast(player_id):
     """Get Statcast advanced metrics via pybaseball."""
