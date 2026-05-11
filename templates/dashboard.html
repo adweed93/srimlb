@@ -565,7 +565,7 @@ async function loadPlayer(id) {
   // Build medal map from rankings
   const _medals = {};
   (d.rankings||[]).forEach(r => {
-    const m = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '';
+    const m = r.mlb_leader ? '👑' : r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '';
     if (m) _medals[r.stat] = m;
   });
   const medal = (stat) => _medals[stat] ? `<span style="font-size:10px">${_medals[stat]}</span>` : '';
@@ -678,9 +678,10 @@ async function loadPlayer(id) {
   if (d.rankings && d.rankings.length) {
     html += '<div class="section-header">📊 League Rankings</div><div class="player-card" style="padding:12px 16px">';
     d.rankings.forEach(r => {
-      const medal = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '•';
-      const highlight = r.rank <= 3 ? 'color:var(--gold);font-weight:700' : r.rank <= 5 ? 'color:var(--green);font-weight:600' : 'color:var(--text)';
-      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="${highlight}">${medal} #${r.rank} in ${r.league} — ${r.stat}</span><span style="color:var(--muted);font-size:12px">${r.value}</span></div>`;
+      const icon = r.mlb_leader ? '👑' : r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '•';
+      const highlight = r.mlb_leader ? 'color:#42a5f5;font-weight:700' : r.rank <= 3 ? 'color:var(--gold);font-weight:700' : r.rank <= 5 ? 'color:var(--green);font-weight:600' : 'color:var(--text)';
+      const label = r.mlb_leader ? `#1 in MLB — ${r.stat}` : `#${r.rank} in ${r.league} — ${r.stat}`;
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)"><span style="${highlight}">${icon} ${label}</span><span style="color:var(--muted);font-size:12px">${r.value}</span></div>`;
     });
     html += '</div>';
   }

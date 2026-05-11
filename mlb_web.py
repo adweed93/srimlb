@@ -69,6 +69,22 @@ def _get_player_rankings(player_name, group, team_id=None):
                     if rank <= 15:
                         rankings.append({"stat": label, "rank": rank, "value": val, "league": league_label})
                     break
+        # Also check MLB-wide #1 for crown
+        for cat, label in cats:
+            r = statsapi.league_leaders(cat, season=datetime.now().year, limit=1, statGroup=group)
+            if not r:
+                continue
+            for line in r.strip().split('\n'):
+                if last_name in line and line.strip() and not line.startswith('Rank'):
+                    # This player leads all of MLB
+                    existing = next((x for x in rankings if x['stat'] == label), None)
+                    if existing:
+                        existing['mlb_leader'] = True
+                    else:
+                        parts = line.strip().split()
+                        val = parts[-1]
+                        rankings.append({"stat": label, "rank": 1, "value": val, "league": "MLB", "mlb_leader": True})
+                    break
     except Exception:
         pass
     return sorted(rankings, key=lambda x: x["rank"])
