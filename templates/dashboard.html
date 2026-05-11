@@ -1444,10 +1444,40 @@ function abEventColor(ev) {
   return 'var(--muted)';
 }
 
+let _abAnimTimer = null;
+
+function renderAbCount(balls, strikes, outs) {
+  const dm = document.getElementById('box-diamond');
+  if (!dm) return;
+  // Update just the BSO part — keep diamond as-is until end
+  const bso = document.getElementById('ab-bso');
+  if (bso) {
+    let h = '<span>B ';
+    for (let i=0;i<4;i++) h+=`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i<balls?'#4caf50':'#333'}"></span>`;
+    h+='</span><span>S ';
+    for (let i=0;i<3;i++) h+=`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i<strikes?'#f44336':'#333'}"></span>`;
+    h+='</span><span>O ';
+    for (let i=0;i<3;i++) h+=`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i<outs?'#ff9800':'#333'}"></span>`;
+    h+='</span>';
+    bso.innerHTML = h;
+  }
+}
+
+function renderAbDiamond(runners) {
+  const dm = document.getElementById('ab-diamond-svg');
+  if (!dm) return;
+  const on = 'var(--green)', off = '#333';
+  dm.querySelector('#base-1').setAttribute('fill', runners.first?on:off);
+  dm.querySelector('#base-2').setAttribute('fill', runners.second?on:off);
+  dm.querySelector('#base-3').setAttribute('fill', runners.third?on:off);
+}
+
 function renderSelectedAtBat() {
+  if (_abAnimTimer) { clearInterval(_abAnimTimer); _abAnimTimer = null; }
   const card = document.getElementById('ab-card-display');
   const zone = document.getElementById('ab-strike-zone');
   const counter = document.getElementById('ab-counter');
+  const dm = document.getElementById('box-diamond');
   if (!card || !_boxAtBats.length) return;
   const ab = _boxAtBats[_boxAbIndex];
   const pitchDots = (ab.pitch_sequence||[]).map(p => {
@@ -1463,11 +1493,46 @@ function renderSelectedAtBat() {
     <div style="display:flex;gap:3px;margin-top:6px;align-items:center">${pitchDots}<span style="font-size:9px;color:var(--muted);margin-left:4px">${ab.pitches}P</span></div>
   </div>`;
   if (counter) counter.textContent = `${_boxAbIndex+1} / ${_boxAtBats.length}`;
-  // Sync strike zone to selected at-bat
-  if (zone) {
-    const pitches = ab.pitch_sequence || [];
-    zone.innerHTML = pitches.length ? renderStrikeZone(pitches, pitches[pitches.length-1]) : '<div style="font-size:11px;color:var(--muted)">No pitch data</div>';
+
+  // Setup diamond with BSO if present
+  if (dm) {
+    dm.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
+      <svg width="80" height="80" viewBox="0 0 100 100">
+        <rect id="base-2" x="35" y="10" width="30" height="30" rx="2" transform="rotate(45 50 25)" fill="#333" stroke="#555" stroke-width="1.5"/>
+        <rect id="base-1" x="55" y="30" width="30" height="30" rx="2" transform="rotate(45 70 45)" fill="#333" stroke="#555" stroke-width="1.5"/>
+        <rect id="base-3" x="15" y="30" width="30" height="30" rx="2" transform="rotate(45 30 45)" fill="#333" stroke="#555" stroke-width="1.5"/>
+        <polygon points="50,75 45,80 50,85 55,80" fill="#fff" stroke="#555" stroke-width="1"/>
+      </svg>
+      <div id="ab-bso" style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--muted)"></div>
+      <div style="margin-top:8px;font-size:12px;font-weight:600;color:var(--text)">${ab.batter}</div>
+      <div style="font-size:11px;color:var(--muted)">vs ${ab.pitcher}</div>
+    </div>`;
+    const prevAb = _boxAbIndex > 0 ? _boxAtBats[_boxAbIndex-1] : null;
+    if (prevAb && prevAb.runners) renderAbDiamond(prevAb.runners);
   }
+
+  // Animate pitches one by one
+  const pitches = ab.pitch_sequence || [];
+  if (!pitches.length) {
+    if (zone) zone.innerHTML = '<div style="font-size:11px;color:var(--muted)">No pitch data</div>';
+    renderAbCount(0, 0, 0);
+    return;
+  }
+  if (zone) zone.innerHTML = renderStrikeZone([], null);
+  renderAbCount(0, 0, 0);
+  let i = 0;
+  _abAnimTimer = setInterval(() => {
+    if (i >= pitches.length) {
+      clearInterval(_abAnimTimer); _abAnimTimer = null;
+      // Show final runners
+      if (ab.runners) renderAbDiamond(ab.runners);
+      return;
+    }
+    const shown = pitches.slice(0, i+1);
+    if (zone) zone.innerHTML = renderStrikeZone(shown, shown[shown.length-1]);
+    renderAbCount(pitches[i].balls||0, pitches[i].strikes||0, pitches[i].outs||0);
+    i++;
+  }, 400);
 }
 
 function abNav(dir) {

@@ -1689,13 +1689,25 @@ def game_plays(game_id):
                 if ev.get("isPitch"):
                     pd = ev.get("pitchData", {})
                     coords = pd.get("coordinates", {})
+                    ct = ev.get("count", {})
                     pitches.append({
                         "x": coords.get("pX", 0),
                         "y": coords.get("pZ", 0),
                         "speed": pd.get("startSpeed", 0),
                         "type": ev.get("details", {}).get("type", {}).get("code", ""),
                         "call": ev.get("details", {}).get("call", {}).get("code", ""),
+                        "balls": ct.get("balls", 0),
+                        "strikes": ct.get("strikes", 0),
+                        "outs": ct.get("outs", 0),
                     })
+            # Runners at end of at-bat
+            play_runners = play.get("runners", [])
+            end_bases = {"first": False, "second": False, "third": False}
+            for pr in play_runners:
+                end_base = pr.get("movement", {}).get("end", "")
+                if end_base == "1B": end_bases["first"] = True
+                elif end_base == "2B": end_bases["second"] = True
+                elif end_base == "3B": end_bases["third"] = True
             at_bats.append({
                 "inning": about.get("inning", 0),
                 "half": about.get("halfInning", ""),
@@ -1708,6 +1720,7 @@ def game_plays(game_id):
                 "rbi": result.get("rbi", 0),
                 "pitches": len(pitches),
                 "pitch_sequence": pitches,
+                "runners": end_bases,
             })
         return jsonify({"plays": at_bats})
     except Exception as e:
