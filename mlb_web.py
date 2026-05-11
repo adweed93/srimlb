@@ -1454,6 +1454,7 @@ def games_history():
                         "away_id": g.get("away_id"), "home_id": g.get("home_id"),
                         "away_score": g.get("away_score", 0),
                         "home_score": g.get("home_score", 0),
+                        "innings": g.get("current_inning", 9),
                     })
         except Exception:
             continue
