@@ -870,7 +870,7 @@ async function loadPlayerLive(id) {
   if (_liveRefreshTimer) clearInterval(_liveRefreshTimer);
   document.getElementById('stats-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading live data...</div></div>';
   await renderPlayerLive(id);
-  _liveRefreshTimer = setInterval(() => { if (document.querySelector('#stats.active')) renderPlayerLive(id); }, 15000);
+  _liveRefreshTimer = setInterval(() => { if (document.querySelector('#stats.active')) renderPlayerLive(id); }, 6000);
 }
 
 async function renderPlayerLive(id) {
@@ -1098,7 +1098,7 @@ async function loadBoxScore(gameId) {
   switchTab('stats');
   document.getElementById('stats-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading box score...</div></div>';
   await renderBoxScore(gameId);
-  _boxRefreshTimer = setInterval(() => { if (document.querySelector('#stats.active')) renderBoxScore(gameId); }, 15000);
+  _boxRefreshTimer = setInterval(() => { if (document.querySelector('#stats.active')) renderBoxScore(gameId); }, 6000);
 }
 
 function renderDiamond(runners, count) {
@@ -1257,7 +1257,7 @@ async function checkNotifs() { await fetch('/api/notifications'); loadNotifs(); 
 async function clearNotifs() { await fetch('/api/notifications/clear',{method:'POST'}); loadNotifs(); }
 
 // Auto-refresh
-setInterval(() => { if (document.querySelector('#scores.active')) loadScores(); }, 15000);
+setInterval(() => { if (document.querySelector('#scores.active')) loadScores(); }, 6000);
 loadScores();
 
 // Prefetch favorite players in background after initial load
