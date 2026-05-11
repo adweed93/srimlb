@@ -189,6 +189,34 @@ def remove_favorite():
     return jsonify({"ok": True})
 
 
+@app.route("/api/live/demo")
+def live_games_demo():
+    """Demo endpoint to preview live game cards."""
+    return jsonify({
+        "live": [
+            {"away": "Baltimore Orioles", "home": "New York Yankees", "away_id": 110, "home_id": 147,
+             "away_score": 4, "home_score": 3, "status": "In Progress", "inning": 7, "inning_state": "Top",
+             "fav": True, "game_id": 999001, "game_time": "", "balls": 2, "strikes": 1, "outs": 1},
+            {"away": "Los Angeles Dodgers", "home": "San Francisco Giants", "away_id": 119, "home_id": 137,
+             "away_score": 1, "home_score": 1, "status": "In Progress", "inning": 3, "inning_state": "Bottom",
+             "fav": False, "game_id": 999002, "game_time": "", "balls": 0, "strikes": 2, "outs": 2},
+            {"away": "Houston Astros", "home": "Texas Rangers", "away_id": 117, "home_id": 140,
+             "away_score": 6, "home_score": 0, "status": "In Progress", "inning": 5, "inning_state": "Top",
+             "fav": False, "game_id": 999003, "game_time": "", "balls": 3, "strikes": 0, "outs": 0},
+        ],
+        "upcoming": [
+            {"away": "Chicago Cubs", "home": "St. Louis Cardinals", "away_id": 112, "home_id": 138,
+             "away_score": 0, "home_score": 0, "status": "Scheduled", "inning": "", "inning_state": "",
+             "fav": False, "game_id": None, "game_time": "2026-05-11T23:10:00Z"},
+        ],
+        "final": [
+            {"away": "Detroit Tigers", "home": "Kansas City Royals", "away_id": 116, "home_id": 118,
+             "away_score": 6, "home_score": 3, "status": "Final", "inning": "", "inning_state": "",
+             "fav": False, "game_id": 824113, "game_time": ""},
+        ],
+    })
+
+
 @app.route("/api/live")
 def live_games():
     games = statsapi.schedule()

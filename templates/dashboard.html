@@ -237,7 +237,8 @@ function switchTab(id) {
 async function loadScores() {
   window._viewingHistory = false;
   document.getElementById('scores-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
-  const r = await fetch('/api/live');
+  const demoMode = new URLSearchParams(window.location.search).get('demo');
+  const r = await fetch(demoMode ? '/api/live/demo' : '/api/live');
   const d = await r.json();
   let html = _scoresNav('today');
 
