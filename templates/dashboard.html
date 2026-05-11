@@ -1116,11 +1116,19 @@ function gradeStats(context) {
     'OBP': pct(la.obp, [0.78, 0.90, 1.0, 1.12, 1.22, 1.35]),
     'SLG': pct(la.slg, [0.75, 0.87, 1.0, 1.18, 1.38, 1.60]),
     'OPS': pct(la.ops, [0.78, 0.88, 1.0, 1.14, 1.26, 1.40]),
+    'BABIP': [.240, .270, .300, .330, .360, .390],
     'ERA': pct(la.era, [1.40, 1.15, 1.0, 0.80, 0.58, 0.40]),
     'WHIP': pct(la.whip, [1.30, 1.12, 1.0, 0.85, 0.72, 0.60]),
     'K/9': pct(la.k9, [0.60, 0.80, 1.0, 1.20, 1.40, 1.65]),
     'BB/9': pct(la.bb9, [1.50, 1.20, 1.0, 0.75, 0.55, 0.40]),
+    'K/BB': [0.8, 1.5, 2.2, 3.2, 4.2, 5.5],
+    'H/9': [11, 9.5, 8.5, 7.5, 6.5, 5.5],
+    'HR/9': [2.2, 1.7, 1.3, 1.0, 0.7, 0.5],
+    'W%': [.300, .400, .500, .580, .650, .750],
+    'BAA': [.280, .260, .240, .220, .200, .180],
     'FLD%': [.950, .965, .975, .985, .995, 1.000],
+    'RF/G': [1.5, 2.0, 2.8, 3.5, 4.2, 4.8],
+    'AB/HR': [50, 30, 22, 16, 12, 9],
   };
   // Counting stats: scale from per-player league avg based on games played
   const g = la.games_per_team || 40;
@@ -1130,6 +1138,10 @@ function gradeStats(context) {
     'RBI': [la.rbi_per_player*scale*0.3, la.rbi_per_player*scale*0.6, la.rbi_per_player*scale, la.rbi_per_player*scale*1.5, la.rbi_per_player*scale*2.0, la.rbi_per_player*scale*2.8].map(Math.round),
     'SB': [0, Math.round(la.sb_per_player*scale*0.5), Math.round(la.sb_per_player*scale), Math.round(la.sb_per_player*scale*2.5), Math.round(la.sb_per_player*scale*4), Math.round(la.sb_per_player*scale*7)],
     'R': [la.rbi_per_player*scale*0.3, la.rbi_per_player*scale*0.6, la.rbi_per_player*scale, la.rbi_per_player*scale*1.4, la.rbi_per_player*scale*1.8, la.rbi_per_player*scale*2.5].map(Math.round),
+    'H': [la.rbi_per_player*scale*0.5, la.rbi_per_player*scale*1.0, la.rbi_per_player*scale*1.8, la.rbi_per_player*scale*2.5, la.rbi_per_player*scale*3.2, la.rbi_per_player*scale*4.0].map(Math.round),
+    '2B': [la.hr_per_player*scale*0.2, la.hr_per_player*scale*0.5, la.hr_per_player*scale*0.8, la.hr_per_player*scale*1.3, la.hr_per_player*scale*1.8, la.hr_per_player*scale*2.5].map(Math.round),
+    'BB': [la.sb_per_player*scale*0.5, la.sb_per_player*scale*1.5, la.sb_per_player*scale*3, la.sb_per_player*scale*5, la.sb_per_player*scale*7, la.sb_per_player*scale*10].map(Math.round),
+    'K': [la.rbi_per_player*scale*2.0, la.rbi_per_player*scale*1.5, la.rbi_per_player*scale*1.1, la.rbi_per_player*scale*0.8, la.rbi_per_player*scale*0.5, la.rbi_per_player*scale*0.3].map(Math.round),
   };
   const benchmarks = {...rate, ...counting};
 
@@ -1139,7 +1151,7 @@ function gradeStats(context) {
     if (!b) return;
     let val = parseFloat(el.textContent.replace(/[🥇🥈🥉]/g, ''));
     if (isNaN(val)) return;
-    const reversed = ['ERA', 'WHIP', 'BB/9'].includes(lbl);
+    const reversed = ['ERA', 'WHIP', 'BB/9', 'K', 'H/9', 'HR/9', 'BAA', 'AB/HR'].includes(lbl);
     let grade;
     if (reversed) {
       grade = val <= b[5] ? 'legendary' : val <= b[4] ? 'elite' : val <= b[3] ? 'good' : val <= b[2] ? 'avg' : val <= b[1] ? 'bad' : 'terrible';
