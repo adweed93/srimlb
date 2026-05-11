@@ -297,7 +297,9 @@ async function loadHistoricalGames() {
   games.forEach(g => {
     if (g.date !== currentDate) {
       currentDate = g.date;
-      html += `<div class="section-header" style="padding-top:12px">${g.date}</div>`;
+      const dt = new Date(g.date + 'T12:00:00');
+      const dateStr = dt.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+      html += `<div class="section-header" style="padding-top:12px">${dateStr}</div>`;
     }
     const awayWin = g.away_score > g.home_score;
     html += `<div class="game-card" onclick="loadBoxScore(${g.game_id})" style="cursor:pointer">
