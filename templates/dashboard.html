@@ -76,6 +76,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 .anomaly.alltime { background: #1a1200; border-left: 3px solid var(--gold); color: var(--gold); box-shadow: inset 0 0 20px rgba(255,190,11,0.05); }
 .anomaly.bad { background: #1a0a00; border-left: 3px solid #ff6b35; color: #ff6b35; box-shadow: inset 0 0 20px rgba(255,107,53,0.05); }
 .anomaly.terrible { background: #1a0000; border-left: 3px solid #ff3333; color: #ff3333; box-shadow: inset 0 0 20px rgba(255,51,51,0.05); }
+.anomaly.caution { background: #1a1500; border-left: 3px solid #ffaa00; color: #ffaa00; box-shadow: inset 0 0 20px rgba(255,170,0,0.05); }
 
 /* Search */
 .search-container { padding: 12px; }
@@ -593,7 +594,7 @@ async function loadPlayer(id) {
   if (d.red_flags && d.red_flags.length) {
     html += '<div class="section-header">🚩 Red Flags</div>';
     d.red_flags.forEach(a => {
-      html += `<div class="anomaly ${a.level}"><div>${a.level==='terrible'?'🚨 ':'⚠️ '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}
+      html += `<div class="anomaly ${a.level}"><div>${a.level==='terrible'?'🚨 ':a.level==='bad'?'⚠️ ':'📉 '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}
       </div>`;
     });
   }
@@ -697,7 +698,7 @@ async function loadPlayerFilter(type) {
     if (d.red_flags && d.red_flags.length) {
       html += '<div class="section-header">🚩 Red Flags</div>';
       d.red_flags.forEach(a => {
-        html += `<div class="anomaly ${a.level}"><div>${a.level==='terrible'?'🚨 ':'⚠️ '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}</div>`;
+        html += `<div class="anomaly ${a.level}"><div>${a.level==='terrible'?'🚨 ':a.level==='bad'?'⚠️ ':'📉 '}${a.msg}</div>${a.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${a.nugget}</div>`:''}</div>`;
       });
     }
     // Career comparisons
@@ -778,7 +779,7 @@ function showYearDashboard() {
     if (yearReds && yearReds.flags && yearReds.flags.length) {
       html += '<div class="section-header">🚩 Red Flags</div>';
       yearReds.flags.forEach(f => {
-        html += `<div class="anomaly ${f.level}"><div>${f.level==='terrible'?'🚨 ':'⚠️ '}${f.msg}</div>${f.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${f.nugget}</div>`:''}</div>`;
+        html += `<div class="anomaly ${f.level}"><div>${f.level==='terrible'?'🚨 ':f.level==='bad'?'⚠️ ':'📉 '}${f.msg}</div>${f.nugget?`<div style="font-size:11px;margin-top:4px;font-weight:400;opacity:0.85;font-style:italic">💡 ${f.nugget}</div>`:''}</div>`;
       });
     }
   }

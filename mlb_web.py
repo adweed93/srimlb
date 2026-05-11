@@ -510,60 +510,109 @@ def player_stats(player_id):
     anomaly_msgs = {a["msg"] for a in anomalies}
     insights = [i for i in insights if i["msg"] not in anomaly_msgs][:4]
 
-    # Bad stat anomalies — historically poor performances
+    # Bad stat anomalies — severity scaled by sample size
     red_flags = []
-    if games > 20 and group == "hitting":
+    if games > 15 and group == "hitting":
         avg = float(stats.get("avg", "0") or "0")
         ops = float(stats.get("ops", "0") or "0")
         k_rate = int(stats.get("strikeOuts", 0)) / max(int(stats.get("plateAppearances", 1) or 1), 1) * 100
         hr = int(stats.get("homeRuns", 0))
         hr_pace = (hr / games) * 162
+        early = games < 30
+        mid = 30 <= games < 60
 
         if avg <= .180:
-            red_flags.append({"msg": f"Batting .{int(avg*1000)} — historically bad", "level": "terrible", "nugget": "The lowest full-season AVG ever by a qualifier: Rob Deer (.179 in 1991) and Chris Davis (.168 in 2018)"})
+            if early:
+                red_flags.append({"msg": f"Batting .{int(avg*1000)} through {games} games — ugly start", "level": "bad", "nugget": "Still early. Eugenio Suarez hit .168 through April 2022 and finished .236. Plenty of time to recover"})
+            elif mid:
+                red_flags.append({"msg": f"Batting .{int(avg*1000)} through {games} games — growing concern", "level": "terrible", "nugget": "Getting harder to recover. Chris Davis hit .168 for a full season in 2018 — the worst ever by a qualifier"})
+            else:
+                red_flags.append({"msg": f"Batting .{int(avg*1000)} through {games} games — historically bad", "level": "terrible", "nugget": "At this point, this is who they are this year. Chris Davis (.168 in 2018) and Rob Deer (.179 in 1991) are the only comparables"})
         elif avg <= .200:
-            red_flags.append({"msg": f"Batting .{int(avg*1000)} — Mendoza Line territory", "level": "bad", "nugget": "Named after Mario Mendoza who hit around .200 — the unofficial threshold for being too bad to play"})
-        elif avg <= .220 and games > 30:
-            red_flags.append({"msg": f"Batting .{int(avg*1000)} — well below average", "level": "bad", "nugget": "MLB average is .245-.250. Sub-.220 over a full season is replacement-level offense"})
+            if early:
+                red_flags.append({"msg": f"Batting .{int(avg*1000)} through {games} games — slow start", "level": "caution", "nugget": "Mendoza Line territory, but many hitters recover from sub-.200 Aprils. Joey Gallo hit .160 in April 2021 and finished .199 with 38 HR"})
+            elif mid:
+                red_flags.append({"msg": f"Batting .{int(avg*1000)} through {games} games — Mendoza Line", "level": "bad", "nugget": "Named after Mario Mendoza (.200). Recovery is possible but requires a sustained hot streak"})
+            else:
+                red_flags.append({"msg": f"Batting .{int(avg*1000)} through {games} games — below the Mendoza Line", "level": "terrible", "nugget": "Sub-.200 over 60+ games is replacement-level. Very few players recover to league average from here"})
+        elif avg <= .220 and games >= 30:
+            if mid:
+                red_flags.append({"msg": f"Batting .{int(avg*1000)} through {games} games — below average", "level": "caution", "nugget": "MLB average is .245-.250. A hot 2-week stretch could bring this up 20+ points"})
+            else:
+                red_flags.append({"msg": f"Batting .{int(avg*1000)} through {games} games — well below average", "level": "bad", "nugget": "Sub-.220 over 60+ games is typically a career-worst season"})
 
-        if ops <= .550 and games > 30:
-            red_flags.append({"msg": f"{ops:.3f} OPS — replacement level", "level": "terrible", "nugget": "An OPS below .600 is typically minor-league caliber. The 2018 Chris Davis posted a .539 OPS"})
-        elif ops <= .650 and games > 30:
-            red_flags.append({"msg": f"{ops:.3f} OPS — well below average", "level": "bad", "nugget": "League average OPS is .710-.720. Sub-.650 is bottom-10 in baseball"})
+        if ops <= .550:
+            if early:
+                red_flags.append({"msg": f"{ops:.3f} OPS through {games} games — ice cold", "level": "bad", "nugget": "Extremely low but small sample. A couple multi-hit games can move OPS significantly early on"})
+            elif mid:
+                red_flags.append({"msg": f"{ops:.3f} OPS through {games} games — replacement level", "level": "terrible", "nugget": "Sub-.600 OPS over 30+ games is minor-league caliber production"})
+            else:
+                red_flags.append({"msg": f"{ops:.3f} OPS through {games} games — historically bad", "level": "terrible", "nugget": "Chris Davis posted .539 OPS in 2018. This is bench/DFA territory"})
+        elif ops <= .650 and games >= 30:
+            if mid:
+                red_flags.append({"msg": f"{ops:.3f} OPS through {games} games — below average", "level": "caution", "nugget": "League average OPS is .710-.720. Power surge or hot streak could fix this"})
+            else:
+                red_flags.append({"msg": f"{ops:.3f} OPS through {games} games — well below average", "level": "bad", "nugget": "Sub-.650 OPS over 60+ games is bottom-10 in baseball"})
 
-        if k_rate >= 35 and games > 20:
-            red_flags.append({"msg": f"{k_rate:.1f}% K rate — extreme swing-and-miss", "level": "terrible", "nugget": "The highest full-season K rate: Patrick Wisdom (35.8% in 2022). Historically unsustainable"})
+        if k_rate >= 35:
+            if early:
+                red_flags.append({"msg": f"{k_rate:.1f}% K rate through {games} games — lots of swing-and-miss", "level": "caution", "nugget": "High early K rates often stabilize as hitters see more pitches. But 35%+ is extreme even short-term"})
+            else:
+                red_flags.append({"msg": f"{k_rate:.1f}% K rate through {games} games — extreme", "level": "terrible", "nugget": "Patrick Wisdom (35.8% in 2022) is the full-season record. This is nearly unhittable territory"})
         elif k_rate >= 30 and games > 20:
-            red_flags.append({"msg": f"{k_rate:.1f}% K rate — high strikeout rate", "level": "bad", "nugget": "Striking out 30%+ of the time makes it very hard to be productive. Only elite power can offset it"})
+            if early:
+                red_flags.append({"msg": f"{k_rate:.1f}% K rate through {games} games — high", "level": "caution", "nugget": "30%+ K rate is concerning but can come down. League average is 22-23%"})
+            else:
+                red_flags.append({"msg": f"{k_rate:.1f}% K rate through {games} games — swing-and-miss problem", "level": "bad", "nugget": "Striking out 30%+ makes it very hard to be productive. Only elite power (Judge, Gallo) can offset it"})
 
         if hr_pace <= 5 and games > 40 and int(stats.get("plateAppearances", 0)) > 200:
-            red_flags.append({"msg": f"On pace for {int(hr_pace)} HR — no power", "level": "bad", "nugget": "For a full-time player, single-digit HR is below replacement-level power"})
+            red_flags.append({"msg": f"On pace for {int(hr_pace)} HR through {games} games — no power", "level": "bad", "nugget": "For a full-time player, single-digit HR pace suggests a mechanical issue or decline"})
 
     elif games > 5 and group == "pitching":
         era = float(stats.get("era", "99") or "99")
         whip = float(stats.get("whip", "99") or "99")
         bb9 = float(stats.get("walksPer9Inn", "0") or "0")
         hr9 = float(stats.get("homeRunsPer9", "0") or "0")
+        ip = float(stats.get("inningsPitched", "0") or "0")
+        early_p = ip < 30
+        mid_p = 30 <= ip < 80
 
-        if era >= 6.00 and games > 8:
-            red_flags.append({"msg": f"{era:.2f} ERA — historically bad", "level": "terrible", "nugget": "A 6.00+ ERA over significant innings is demotion territory. The worst qualified season ERA: Les Sweetland (7.71 in 1930)"})
-        elif era >= 5.00 and games > 8:
-            red_flags.append({"msg": f"{era:.2f} ERA — well below average", "level": "bad", "nugget": "League average ERA is 4.00-4.20. A 5.00+ ERA is back-of-rotation or worse"})
+        if era >= 6.00:
+            if early_p:
+                red_flags.append({"msg": f"{era:.2f} ERA through {ip:.0f} IP — rough start", "level": "caution", "nugget": "ERA is volatile in small samples. One bad outing can inflate it massively. A few clean starts will bring it down fast"})
+            elif mid_p:
+                red_flags.append({"msg": f"{era:.2f} ERA through {ip:.0f} IP — major concern", "level": "bad", "nugget": "Getting harder to bring down. At 50+ IP, ERA starts to stabilize. Demotion risk if this continues"})
+            else:
+                red_flags.append({"msg": f"{era:.2f} ERA through {ip:.0f} IP — historically bad", "level": "terrible", "nugget": "A 6.00+ ERA over 80+ IP is demotion/DFA territory. The worst qualified ERA: Les Sweetland (7.71 in 1930)"})
+        elif era >= 5.00:
+            if early_p:
+                red_flags.append({"msg": f"{era:.2f} ERA through {ip:.0f} IP — elevated", "level": "caution", "nugget": "Still early. Many aces have 5.00+ ERAs in April and finish under 3.50. One blowup skews everything"})
+            else:
+                red_flags.append({"msg": f"{era:.2f} ERA through {ip:.0f} IP — below average", "level": "bad", "nugget": "League average ERA is 4.00-4.20. A 5.00+ ERA over 30+ IP is back-of-rotation or worse"})
 
-        if whip >= 1.60 and games > 8:
-            red_flags.append({"msg": f"{whip:.2f} WHIP — too many baserunners", "level": "terrible", "nugget": "A WHIP above 1.60 means nearly 2 baserunners per inning — unsustainable for any role"})
-        elif whip >= 1.40 and games > 8:
-            red_flags.append({"msg": f"{whip:.2f} WHIP — below average", "level": "bad", "nugget": "League average WHIP is ~1.30. Above 1.40 puts constant pressure on the defense"})
+        if whip >= 1.60:
+            if early_p:
+                red_flags.append({"msg": f"{whip:.2f} WHIP through {ip:.0f} IP — too much traffic", "level": "caution", "nugget": "WHIP stabilizes slower than ERA. A few clean outings can drop this significantly"})
+            else:
+                red_flags.append({"msg": f"{whip:.2f} WHIP through {ip:.0f} IP — too many baserunners", "level": "terrible", "nugget": "Nearly 2 baserunners per inning over 30+ IP is unsustainable for any role"})
+        elif whip >= 1.40 and ip >= 20:
+            red_flags.append({"msg": f"{whip:.2f} WHIP through {ip:.0f} IP — below average", "level": "caution" if early_p else "bad", "nugget": "League average WHIP is ~1.30. Above 1.40 puts constant pressure on the defense"})
 
-        if bb9 >= 5.0 and games > 8:
-            red_flags.append({"msg": f"{bb9:.1f} BB/9 — severe control issues", "level": "terrible", "nugget": "Walking 5+ per 9 innings is historically bad. The worst qualified BB/9: Tommy Byrne (8.4 in 1950)"})
-        elif bb9 >= 4.0 and games > 8:
-            red_flags.append({"msg": f"{bb9:.1f} BB/9 — poor command", "level": "bad", "nugget": "League average is ~3.2 BB/9. Walking 4+ per 9 makes it hard to pitch deep into games"})
+        if bb9 >= 5.0 and ip >= 15:
+            if early_p:
+                red_flags.append({"msg": f"{bb9:.1f} BB/9 through {ip:.0f} IP — control issues", "level": "caution", "nugget": "Walk rates can be noisy early. But 5+ BB/9 suggests mechanical or confidence issues"})
+            else:
+                red_flags.append({"msg": f"{bb9:.1f} BB/9 through {ip:.0f} IP — severe control problems", "level": "terrible", "nugget": "Walking 5+ per 9 over 30+ IP is historically bad. Very few pitchers sustain a rotation spot with this"})
+        elif bb9 >= 4.0 and ip >= 20:
+            red_flags.append({"msg": f"{bb9:.1f} BB/9 through {ip:.0f} IP — poor command", "level": "caution" if early_p else "bad", "nugget": "League average is ~3.2 BB/9. Walking 4+ per 9 makes it hard to pitch deep into games"})
 
-        if hr9 >= 2.0 and games > 8:
-            red_flags.append({"msg": f"{hr9:.1f} HR/9 — home run prone", "level": "terrible", "nugget": "Allowing 2+ HR per 9 innings is extreme. The worst qualified HR/9 seasons are around 2.1"})
-        elif hr9 >= 1.5 and games > 8:
-            red_flags.append({"msg": f"{hr9:.1f} HR/9 — giving up too many long balls", "level": "bad", "nugget": "League average is ~1.2 HR/9. Above 1.5 means the ball is leaving the yard too often"})
+        if hr9 >= 2.0 and ip >= 20:
+            if early_p:
+                red_flags.append({"msg": f"{hr9:.1f} HR/9 through {ip:.0f} IP — home run prone", "level": "caution", "nugget": "HR/9 is the most volatile pitching stat early on. A couple solo shots in short outings inflate this"})
+            else:
+                red_flags.append({"msg": f"{hr9:.1f} HR/9 through {ip:.0f} IP — giving up too many long balls", "level": "terrible", "nugget": "2+ HR/9 over 30+ IP is extreme. The worst qualified HR/9 seasons are around 2.1"})
+        elif hr9 >= 1.5 and ip >= 30:
+            red_flags.append({"msg": f"{hr9:.1f} HR/9 through {ip:.0f} IP — elevated HR rate", "level": "bad", "nugget": "League average is ~1.2 HR/9. Above 1.5 means the ball is leaving the yard too often"})
 
     # Get player's league rankings
     player_name = info.get("first_name", "") + " " + info.get("last_name", "")
