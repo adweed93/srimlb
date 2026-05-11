@@ -1,0 +1,181 @@
+{
+  "hr": {
+    "record": 73,
+    "holder": "Barry Bonds (2001)",
+    "notable": [
+      {
+        "val": 62,
+        "holder": "Aaron Judge (2022)"
+      },
+      {
+        "val": 61,
+        "holder": "Roger Maris (1961)"
+      }
+    ]
+  },
+  "hits": {
+    "record": 262,
+    "holder": "Ichiro Suzuki (2004)",
+    "notable": [
+      {
+        "val": 240,
+        "holder": "Darin Erstad (2000)"
+      }
+    ]
+  },
+  "sb": {
+    "record": 130,
+    "holder": "Rickey Henderson (1982)",
+    "notable": [
+      {
+        "val": 110,
+        "holder": "Vince Coleman (1985)"
+      },
+      {
+        "val": 67,
+        "holder": "Elly De La Cruz (2024)"
+      }
+    ]
+  },
+  "rbi": {
+    "record": 191,
+    "holder": "Hack Wilson (1930)",
+    "notable": [
+      {
+        "val": 165,
+        "holder": "Manny Ramirez (1999)"
+      },
+      {
+        "val": 156,
+        "holder": "Jimmie Foxx (1938)"
+      }
+    ]
+  },
+  "avg": {
+    "record": 0.406,
+    "holder": "Ted Williams (1941)",
+    "notable": [
+      {
+        "val": 0.394,
+        "holder": "Tony Gwynn (1994)"
+      },
+      {
+        "val": 0.39,
+        "holder": "George Brett (1980)"
+      }
+    ]
+  },
+  "obp": {
+    "record": 0.609,
+    "holder": "Barry Bonds (2004)",
+    "notable": [
+      {
+        "val": 0.553,
+        "holder": "Ted Williams (1941)"
+      },
+      {
+        "val": 0.529,
+        "holder": "Babe Ruth (1923)"
+      }
+    ]
+  },
+  "slg": {
+    "record": 0.863,
+    "holder": "Barry Bonds (2001)",
+    "notable": [
+      {
+        "val": 0.847,
+        "holder": "Babe Ruth (1920)"
+      },
+      {
+        "val": 0.735,
+        "holder": "Albert Pujols (2006)"
+      }
+    ]
+  },
+  "doubles": {
+    "record": 67,
+    "holder": "Earl Webb (1931)",
+    "notable": [
+      {
+        "val": 64,
+        "holder": "George Burns (1926)"
+      },
+      {
+        "val": 59,
+        "holder": "Todd Helton (2000)"
+      }
+    ]
+  },
+  "era": {
+    "record": 1.12,
+    "holder": "Bob Gibson (1968)",
+    "notable": [
+      {
+        "val": 1.7,
+        "holder": "Jacob deGrom (2018)"
+      },
+      {
+        "val": 1.74,
+        "holder": "Pedro Martinez (2000)"
+      }
+    ]
+  },
+  "k_season": {
+    "record": 383,
+    "holder": "Nolan Ryan (1973)",
+    "notable": [
+      {
+        "val": 372,
+        "holder": "Sandy Koufax (1965)"
+      },
+      {
+        "val": 326,
+        "holder": "Gerrit Cole (2019)"
+      }
+    ]
+  },
+  "whip": {
+    "record": 0.737,
+    "holder": "Pedro Martinez (2000)",
+    "notable": [
+      {
+        "val": 0.839,
+        "holder": "Greg Maddux (1995)"
+      },
+      {
+        "val": 0.867,
+        "holder": "Clayton Kershaw (2014)"
+      }
+    ]
+  },
+  "wins": {
+    "record": 27,
+    "holder": "Steve Carlton (1972)",
+    "notable": [
+      {
+        "val": 24,
+        "holder": "Justin Verlander (2011)"
+      },
+      {
+        "val": 23,
+        "holder": "Cliff Lee (2008)"
+      }
+    ]
+  },
+  "k9": {
+    "record": 13.41,
+    "holder": "Chris Sale (2017)",
+    "notable": [
+      {
+        "val": 13.38,
+        "holder": "Gerrit Cole (2019)"
+      },
+      {
+        "val": 12.56,
+        "holder": "Max Scherzer (2018)"
+      }
+    ]
+  },
+  "fetched_at": "2026-05-10T23:14:50.342649"
+}

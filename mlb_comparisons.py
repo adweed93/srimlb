@@ -3,93 +3,60 @@
 Instead of comparing every player to the same fixed records, this module:
 1. Identifies what a player is good at (power, contact, speed, discipline, etc.)
 2. Only shows comparisons relevant to their strengths
-3. Uses archetype-specific historical counterparts
+3. Uses archetype-specific historical counterparts verified from MLB API
 """
 
+from mlb_records import get_records
 
-# Archetype-specific single-season records and comps
-POWER_COMPS = {
-    "hr": {"record": 73, "holder": "Barry Bonds (2001)", "notable": [
-        {"val": 62, "holder": "Aaron Judge (2022)"},
-        {"val": 61, "holder": "Roger Maris (1961)"},
-        {"val": 56, "holder": "Hack Wilson (1930)"},
-    ]},
-    "rbi": {"record": 191, "holder": "Hack Wilson (1930)", "notable": [
-        {"val": 165, "holder": "Manny Ramirez (1999)"},
-        {"val": 156, "holder": "Jimmie Foxx (1938)"},
-    ]},
-    "slg": {"record": .863, "holder": "Barry Bonds (2001)", "notable": [
-        {"val": .847, "holder": "Babe Ruth (1920)"},
-        {"val": .735, "holder": "Albert Pujols (2006)"},
-    ]},
-}
 
-CONTACT_COMPS = {
-    "avg": {"record": .406, "holder": "Ted Williams (1941)", "notable": [
-        {"val": .394, "holder": "Tony Gwynn (1994)"},
-        {"val": .390, "holder": "George Brett (1980)"},
-        {"val": .372, "holder": "Ichiro Suzuki (2004)"},
-    ]},
-    "hits": {"record": 262, "holder": "Ichiro Suzuki (2004)", "notable": [
-        {"val": 257, "holder": "George Sisler (1920)"},
-        {"val": 240, "holder": "Darin Erstad (2000)"},
-    ]},
-    "doubles": {"record": 67, "holder": "Earl Webb (1931)", "notable": [
-        {"val": 64, "holder": "George Burns (1926)"},
-        {"val": 59, "holder": "Todd Helton (2000)"},
-    ]},
-}
+def _get_record(key, field="record"):
+    """Get a verified record value, with hardcoded fallback."""
+    r = get_records()
+    return r.get(key, {}).get(field)
 
-SPEED_COMPS = {
-    "sb": {"record": 130, "holder": "Rickey Henderson (1982)", "notable": [
-        {"val": 110, "holder": "Vince Coleman (1985)"},
-        {"val": 78, "holder": "Tim Raines (1983)"},
-        {"val": 73, "holder": "Elly De La Cruz (2024)"},
-    ]},
-    "triples": {"record": 36, "holder": "Chief Wilson (1912)", "notable": [
-        {"val": 23, "holder": "Curtis Granderson (2007)"},
-        {"val": 21, "holder": "Jimmy Rollins (2007)"},
-    ]},
-}
 
-DISCIPLINE_COMPS = {
-    "obp": {"record": .609, "holder": "Barry Bonds (2004)", "notable": [
-        {"val": .553, "holder": "Ted Williams (1941)"},
-        {"val": .529, "holder": "Babe Ruth (1923)"},
-    ]},
-    "bb": {"record": 232, "holder": "Barry Bonds (2004)", "notable": [
-        {"val": 170, "holder": "Babe Ruth (1923)"},
-        {"val": 148, "holder": "Ted Williams (1947)"},
-    ]},
-}
+# Archetype-specific comps are now pulled from get_records() at runtime
+# These fallback dicts are only used if the cache fails
+POWER_COMPS = None  # Loaded dynamically
+CONTACT_COMPS = None
+SPEED_COMPS = None
+DISCIPLINE_COMPS = None
+STRIKEOUT_PITCHER_COMPS = None
+CONTROL_PITCHER_COMPS = None
 
-STRIKEOUT_PITCHER_COMPS = {
-    "k_season": {"record": 383, "holder": "Nolan Ryan (1973)", "notable": [
-        {"val": 372, "holder": "Sandy Koufax (1965)"},
-        {"val": 354, "holder": "Randy Johnson (2001)"},
-        {"val": 313, "holder": "Gerrit Cole (2019)"},
-    ]},
-    "k9": {"record": 13.41, "holder": "Chris Sale (2017)", "notable": [
-        {"val": 13.38, "holder": "Gerrit Cole (2019)"},
-        {"val": 12.56, "holder": "Max Scherzer (2018)"},
-    ]},
-}
 
-CONTROL_PITCHER_COMPS = {
-    "era": {"record": 1.12, "holder": "Bob Gibson (1968)", "notable": [
-        {"val": 1.56, "holder": "Dwight Gooden (1985)"},
-        {"val": 1.70, "holder": "Jacob deGrom (2018)"},
-        {"val": 1.74, "holder": "Pedro Martinez (2000)"},
-    ]},
-    "whip": {"record": 0.737, "holder": "Pedro Martinez (2000)", "notable": [
-        {"val": 0.839, "holder": "Greg Maddux (1995)"},
-        {"val": 0.867, "holder": "Clayton Kershaw (2014)"},
-    ]},
-    "wins": {"record": 27, "holder": "Steve Carlton (1972)", "notable": [
-        {"val": 24, "holder": "Justin Verlander (2011)"},
-        {"val": 23, "holder": "Cliff Lee (2008)"},
-    ]},
-}
+def _comps():
+    """Get all comparison data from verified records."""
+    r = get_records()
+    return {
+        "power": {
+            "hr": r.get("hr", {"record": 73, "holder": "Barry Bonds (2001)", "notable": []}),
+            "rbi": r.get("rbi", {"record": 191, "holder": "Hack Wilson (1930)", "notable": []}),
+            "slg": r.get("slg", {"record": .863, "holder": "Barry Bonds (2001)", "notable": []}),
+        },
+        "contact": {
+            "avg": r.get("avg", {"record": .406, "holder": "Ted Williams (1941)", "notable": []}),
+            "hits": r.get("hits", {"record": 262, "holder": "Ichiro Suzuki (2004)", "notable": []}),
+            "doubles": r.get("doubles", {"record": 67, "holder": "Earl Webb (1931)", "notable": []}),
+        },
+        "speed": {
+            "sb": r.get("sb", {"record": 130, "holder": "Rickey Henderson (1982)", "notable": []}),
+        },
+        "discipline": {
+            "obp": r.get("obp", {"record": .609, "holder": "Barry Bonds (2004)", "notable": []}),
+            "bb": {"record": 232, "holder": "Barry Bonds (2004)", "notable": [
+                {"val": 170, "holder": "Babe Ruth (1923)"}, {"val": 148, "holder": "Ted Williams (1947)"}]},
+        },
+        "strikeout_pitch": {
+            "k_season": r.get("k_season", {"record": 383, "holder": "Nolan Ryan (1973)", "notable": []}),
+            "k9": r.get("k9", {"record": 13.41, "holder": "Chris Sale (2017)", "notable": []}),
+        },
+        "control_pitch": {
+            "era": r.get("era", {"record": 1.12, "holder": "Bob Gibson (1968)", "notable": []}),
+            "whip": r.get("whip", {"record": 0.737, "holder": "Pedro Martinez (2000)", "notable": []}),
+            "wins": r.get("wins", {"record": 27, "holder": "Steve Carlton (1972)", "notable": []}),
+        },
+    }
 
 
 def detect_hitter_archetype(stats, games):
@@ -161,6 +128,14 @@ def get_season_comparisons(stats, group, games, thresholds=None):
     if games <= 20:
         return anomalies, comparisons
 
+    c = _comps()
+    POWER_COMPS = c["power"]
+    CONTACT_COMPS = c["contact"]
+    SPEED_COMPS = c["speed"]
+    DISCIPLINE_COMPS = c["discipline"]
+    STRIKEOUT_PITCHER_COMPS = c["strikeout_pitch"]
+    CONTROL_PITCHER_COMPS = c["control_pitch"]
+
     if group == "hitting":
         archetypes = detect_hitter_archetype(stats, games)
         hr = int(stats.get("homeRuns", 0))
@@ -191,8 +166,9 @@ def get_season_comparisons(stats, group, games, thresholds=None):
             elif hr_pace >= 40:
                 anomalies.append({"msg": f"On pace for {int(hr_pace)} HRs", "level": "alert", "nugget": "A 40+ HR season has only happened ~30 times since 2010"})
             if hr_pace >= 35:
-                comparisons.append({"stat": "HR Pace", "current": str(int(hr_pace)), "record": "73", "holder": POWER_COMPS["hr"]["holder"], "pct": round(hr_pace / 73 * 100)})
-                for n in POWER_COMPS["hr"]["notable"]:
+                hr_rec = POWER_COMPS["hr"]
+                comparisons.append({"stat": "HR Pace", "current": str(int(hr_pace)), "record": str(hr_rec["record"]), "holder": hr_rec["holder"], "pct": round(hr_pace / hr_rec["record"] * 100)})
+                for n in hr_rec.get("notable", []):
                     if hr_pace >= n["val"] * 0.6:
                         comparisons.append({"stat": "", "current": "", "record": str(n["val"]), "holder": n["holder"], "pct": round(hr_pace / n["val"] * 100)})
                         break
@@ -200,11 +176,13 @@ def get_season_comparisons(stats, group, games, thresholds=None):
             if rbi_pace >= 140:
                 nugget = "Hasn't been done since Manny Ramirez drove in 165 in 1999" if rbi_pace >= 160 else "Last 140+ RBI season: Albert Pujols (2006)"
                 anomalies.append({"msg": f"On pace for {int(rbi_pace)} RBI", "level": "alltime" if rbi_pace >= 160 else "alert", "nugget": nugget})
-                comparisons.append({"stat": "RBI Pace", "current": str(int(rbi_pace)), "record": "191", "holder": POWER_COMPS["rbi"]["holder"], "pct": round(rbi_pace / 191 * 100)})
+                rbi_rec = POWER_COMPS["rbi"]
+                comparisons.append({"stat": "RBI Pace", "current": str(int(rbi_pace)), "record": str(rbi_rec["record"]), "holder": rbi_rec["holder"], "pct": round(rbi_pace / rbi_rec["record"] * 100)})
 
             if slg >= .650:
                 anomalies.append({"msg": f"{slg:.3f} SLG — historic power", "level": "alltime", "nugget": "Only Bonds, Ruth, and Williams have posted .700+ SLG in a full season"})
-                comparisons.append({"stat": "SLG", "current": f"{slg:.3f}", "record": ".863", "holder": POWER_COMPS["slg"]["holder"], "pct": round(slg / .863 * 100)})
+                slg_rec = POWER_COMPS["slg"]
+                comparisons.append({"stat": "SLG", "current": f"{slg:.3f}", "record": f"{slg_rec['record']:.3f}", "holder": slg_rec["holder"], "pct": round(slg / slg_rec["record"] * 100)})
             elif slg >= .580:
                 anomalies.append({"msg": f"{slg:.3f} SLG — elite power", "level": "alert", "nugget": "A .580+ SLG typically ranks top-5 in baseball"})
 
@@ -216,8 +194,9 @@ def get_season_comparisons(stats, group, games, thresholds=None):
             elif avg >= .330:
                 anomalies.append({"msg": f"Batting .{int(avg*1000)} — elite contact", "level": "alert", "nugget": "Only 5 players have hit .340+ in a season since 2000"})
             if avg >= .310:
-                comparisons.append({"stat": "AVG", "current": f".{int(avg*1000)}", "record": ".406", "holder": CONTACT_COMPS["avg"]["holder"], "pct": round(avg / 0.406 * 100)})
-                for n in CONTACT_COMPS["avg"]["notable"]:
+                avg_rec = CONTACT_COMPS["avg"]
+                comparisons.append({"stat": "AVG", "current": f".{int(avg*1000)}", "record": f".{int(avg_rec['record']*1000)}", "holder": avg_rec["holder"], "pct": round(avg / avg_rec["record"] * 100)})
+                for n in avg_rec.get("notable", []):
                     if avg >= n["val"] * 0.85:
                         comparisons.append({"stat": "", "current": "", "record": f".{int(n['val']*1000)}", "holder": n["holder"], "pct": round(avg / n["val"] * 100)})
                         break
@@ -227,11 +206,13 @@ def get_season_comparisons(stats, group, games, thresholds=None):
                     anomalies.append({"msg": f"On pace for {int(hits_pace)} hits — Ichiro territory", "level": "alltime", "nugget": "Only Ichiro (262) and George Sisler (257) have reached 240+"})
                 else:
                     anomalies.append({"msg": f"On pace for {int(hits_pace)} hits", "level": "alert", "nugget": "A 220+ hit season is rare — happens maybe once every 2-3 years"})
-                comparisons.append({"stat": "Hits Pace", "current": str(int(hits_pace)), "record": "262", "holder": CONTACT_COMPS["hits"]["holder"], "pct": round(hits_pace / 262 * 100)})
+                hits_rec = CONTACT_COMPS["hits"]
+                comparisons.append({"stat": "Hits Pace", "current": str(int(hits_pace)), "record": str(hits_rec["record"]), "holder": hits_rec["holder"], "pct": round(hits_pace / hits_rec["record"] * 100)})
 
             if doubles_pace >= 50:
                 anomalies.append({"msg": f"On pace for {int(doubles_pace)} doubles", "level": "alert", "nugget": "50+ doubles is a rare gap-power achievement — last done by Freddie Freeman (2023)"})
-                comparisons.append({"stat": "2B Pace", "current": str(int(doubles_pace)), "record": "67", "holder": CONTACT_COMPS["doubles"]["holder"], "pct": round(doubles_pace / 67 * 100)})
+                dbl_rec = CONTACT_COMPS["doubles"]
+                comparisons.append({"stat": "2B Pace", "current": str(int(doubles_pace)), "record": str(dbl_rec["record"]), "holder": dbl_rec["holder"], "pct": round(doubles_pace / dbl_rec["record"] * 100)})
 
         # --- SPEED archetype ---
         if "speed" in archetypes:
@@ -240,8 +221,9 @@ def get_season_comparisons(stats, group, games, thresholds=None):
             elif sb_pace >= 50:
                 anomalies.append({"msg": f"On pace for {int(sb_pace)} SB", "level": "alert", "nugget": "The stolen base leader has averaged ~45 since 2015"})
             if sb_pace >= 30:
-                comparisons.append({"stat": "SB Pace", "current": str(int(sb_pace)), "record": "130", "holder": SPEED_COMPS["sb"]["holder"], "pct": round(sb_pace / 130 * 100)})
-                for n in SPEED_COMPS["sb"]["notable"]:
+                sb_rec = SPEED_COMPS["sb"]
+                comparisons.append({"stat": "SB Pace", "current": str(int(sb_pace)), "record": str(sb_rec["record"]), "holder": sb_rec["holder"], "pct": round(sb_pace / sb_rec["record"] * 100)})
+                for n in sb_rec.get("notable", []):
                     if sb_pace >= n["val"] * 0.5:
                         comparisons.append({"stat": "", "current": "", "record": str(n["val"]), "holder": n["holder"], "pct": round(sb_pace / n["val"] * 100)})
                         break
@@ -250,14 +232,17 @@ def get_season_comparisons(stats, group, games, thresholds=None):
         if "discipline" in archetypes:
             if obp >= .450:
                 anomalies.append({"msg": f"{obp:.3f} OBP — ALL-TIME TERRITORY", "level": "alltime", "nugget": "Only Bonds, Williams, and Ruth have posted .450+ OBP in a full season (modern era)"})
-                comparisons.append({"stat": "OBP", "current": f"{obp:.3f}", "record": ".609", "holder": DISCIPLINE_COMPS["obp"]["holder"], "pct": round(obp / .609 * 100)})
+                obp_rec = DISCIPLINE_COMPS["obp"]
+                comparisons.append({"stat": "OBP", "current": f"{obp:.3f}", "record": f"{obp_rec['record']:.3f}", "holder": obp_rec["holder"], "pct": round(obp / obp_rec["record"] * 100)})
             elif obp >= .400:
                 anomalies.append({"msg": f"{obp:.3f} OBP — elite plate discipline", "level": "alert", "nugget": "Fewer than 5 players per year finish above .400 OBP"})
-                comparisons.append({"stat": "OBP", "current": f"{obp:.3f}", "record": ".609", "holder": DISCIPLINE_COMPS["obp"]["holder"], "pct": round(obp / .609 * 100)})
+                obp_rec = DISCIPLINE_COMPS["obp"]
+                comparisons.append({"stat": "OBP", "current": f"{obp:.3f}", "record": f"{obp_rec['record']:.3f}", "holder": obp_rec["holder"], "pct": round(obp / obp_rec["record"] * 100)})
 
             if bb_pace >= 100:
                 anomalies.append({"msg": f"On pace for {int(bb_pace)} walks", "level": "alert", "nugget": "100+ walks in a season is elite — only ~5 players do it per year"})
-                comparisons.append({"stat": "BB Pace", "current": str(int(bb_pace)), "record": "232", "holder": DISCIPLINE_COMPS["bb"]["holder"], "pct": round(bb_pace / 232 * 100)})
+                bb_rec = DISCIPLINE_COMPS["bb"]
+                comparisons.append({"stat": "BB Pace", "current": str(int(bb_pace)), "record": str(bb_rec["record"]), "holder": bb_rec["holder"], "pct": round(bb_pace / bb_rec["record"] * 100)})
 
         # --- Universal OPS check (all archetypes) ---
         if ops >= 1.100:
@@ -282,15 +267,17 @@ def get_season_comparisons(stats, group, games, thresholds=None):
             elif k_pace >= 250:
                 anomalies.append({"msg": f"On pace for {int(k_pace)} K", "level": "alert", "nugget": "A 250+ K season is ace-level — happens ~5 times per year"})
             if k_pace >= 200:
-                comparisons.append({"stat": "K Pace", "current": str(int(k_pace)), "record": "383", "holder": STRIKEOUT_PITCHER_COMPS["k_season"]["holder"], "pct": round(k_pace / 383 * 100)})
-                for n in STRIKEOUT_PITCHER_COMPS["k_season"]["notable"]:
+                k_rec = STRIKEOUT_PITCHER_COMPS["k_season"]
+                comparisons.append({"stat": "K Pace", "current": str(int(k_pace)), "record": str(k_rec["record"]), "holder": k_rec["holder"], "pct": round(k_pace / k_rec["record"] * 100)})
+                for n in k_rec.get("notable", []):
                     if k_pace >= n["val"] * 0.7:
                         comparisons.append({"stat": "", "current": "", "record": str(n["val"]), "holder": n["holder"], "pct": round(k_pace / n["val"] * 100)})
                         break
 
             if k9 >= 13.0:
                 anomalies.append({"msg": f"{k9:.1f} K/9 — historic dominance", "level": "alltime", "nugget": "Full-season K/9 record: Gerrit Cole (13.8 in 2019)"})
-                comparisons.append({"stat": "K/9", "current": f"{k9:.1f}", "record": "13.4", "holder": STRIKEOUT_PITCHER_COMPS["k9"]["holder"], "pct": round(k9 / 13.41 * 100)})
+                k9_rec = STRIKEOUT_PITCHER_COMPS["k9"]
+                comparisons.append({"stat": "K/9", "current": f"{k9:.1f}", "record": f"{k9_rec['record']:.1f}", "holder": k9_rec["holder"], "pct": round(k9 / k9_rec["record"] * 100)})
             elif k9 >= 11.0:
                 anomalies.append({"msg": f"{k9:.1f} K/9 — elite", "level": "alert", "nugget": "11+ K/9 puts you in the top 1% of all starters historically"})
 
@@ -301,20 +288,23 @@ def get_season_comparisons(stats, group, games, thresholds=None):
             elif era <= 2.50:
                 anomalies.append({"msg": f"{era:.2f} ERA — elite", "level": "alert", "nugget": "Only 2-3 qualified starters finish below 2.50 each season"})
             if era <= 3.00:
-                comparisons.append({"stat": "ERA", "current": f"{era:.2f}", "record": "1.12", "holder": CONTROL_PITCHER_COMPS["era"]["holder"], "pct": round((1 - era/4.50) / (1 - 1.12/4.50) * 100)})
-                for n in CONTROL_PITCHER_COMPS["era"]["notable"]:
+                era_rec = CONTROL_PITCHER_COMPS["era"]
+                comparisons.append({"stat": "ERA", "current": f"{era:.2f}", "record": f"{era_rec['record']:.2f}", "holder": era_rec["holder"], "pct": round((1 - era/4.50) / (1 - era_rec["record"]/4.50) * 100)})
+                for n in era_rec.get("notable", []):
                     if era <= n["val"] * 1.5:
                         comparisons.append({"stat": "", "current": "", "record": f"{n['val']:.2f}", "holder": n["holder"], "pct": 0})
                         break
 
             if whip <= 0.85 and games > 8:
                 anomalies.append({"msg": f"{whip:.2f} WHIP — ALL-TIME TERRITORY", "level": "alltime", "nugget": "Lowest full-season WHIP: Pedro Martinez (0.737 in 2000)"})
-                comparisons.append({"stat": "WHIP", "current": f"{whip:.3f}", "record": "0.737", "holder": CONTROL_PITCHER_COMPS["whip"]["holder"], "pct": round((1.50 - whip) / (1.50 - 0.737) * 100)})
+                whip_rec = CONTROL_PITCHER_COMPS["whip"]
+                comparisons.append({"stat": "WHIP", "current": f"{whip:.3f}", "record": f"{whip_rec['record']:.3f}", "holder": whip_rec["holder"], "pct": round((1.50 - whip) / (1.50 - whip_rec["record"]) * 100)})
             elif whip <= 1.00 and games > 8:
                 anomalies.append({"msg": f"{whip:.2f} WHIP — elite", "level": "alert", "nugget": "Sub-1.00 WHIP is historically rare — only ~20 qualified seasons ever"})
 
             if w_pace >= 22 and games > 10:
                 anomalies.append({"msg": f"On pace for {int(w_pace)} wins", "level": "alert", "nugget": "Last 20+ win season: Justin Verlander (21 in 2011)"})
-                comparisons.append({"stat": "Win Pace", "current": str(int(w_pace)), "record": "27", "holder": CONTROL_PITCHER_COMPS["wins"]["holder"], "pct": round(w_pace / 27 * 100)})
+                win_rec = CONTROL_PITCHER_COMPS["wins"]
+                comparisons.append({"stat": "Win Pace", "current": str(int(w_pace)), "record": str(win_rec["record"]), "holder": win_rec["holder"], "pct": round(w_pace / win_rec["record"] * 100)})
 
     return anomalies, comparisons
