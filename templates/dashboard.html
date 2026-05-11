@@ -1669,20 +1669,21 @@ function buildLinescoreTable(d) {
   const c = 'padding:4px 6px;border:1px solid var(--border);text-align:center;font-size:11px;font-family:\'SF Mono\',\'Fira Code\',monospace;min-width:22px';
   const h = 'padding:4px 6px;border:1px solid var(--border);text-align:center;font-size:10px;color:var(--muted);font-weight:600;min-width:22px';
   const t = 'padding:4px 6px;border:1px solid var(--border);text-align:left;font-size:11px;font-weight:600;white-space:nowrap';
+  const rowH = 'height:26px';
   // Left: team names
-  let left = `<table style="border-collapse:collapse"><tr><td style="${h}"></td></tr><tr><td style="${t}">${d.away_team}</td></tr><tr><td style="${t}">${d.home_team}</td></tr></table>`;
+  let left = `<table style="border-collapse:collapse"><tr><td style="${h};${rowH}">&nbsp;</td></tr><tr><td style="${t};${rowH}">${d.away_team}</td></tr><tr><td style="${t};${rowH}">${d.home_team}</td></tr></table>`;
   // Middle: innings (scrollable)
   let mid = '<table style="border-collapse:collapse"><tr>';
-  lt.innings.forEach(inn => { mid += `<td style="${h}">${inn.num}</td>`; });
+  lt.innings.forEach(inn => { mid += `<td style="${h};${rowH}">${inn.num}</td>`; });
   mid += '</tr><tr>';
-  lt.innings.forEach(inn => { mid += `<td style="${c}">${inn.away!==''?inn.away:'-'}</td>`; });
+  lt.innings.forEach(inn => { mid += `<td style="${c};${rowH}">${inn.away!==''?inn.away:'-'}</td>`; });
   mid += '</tr><tr>';
-  lt.innings.forEach(inn => { mid += `<td style="${c}">${inn.home!==''?inn.home:'-'}</td>`; });
+  lt.innings.forEach(inn => { mid += `<td style="${c};${rowH}">${inn.home!==''?inn.home:'-'}</td>`; });
   mid += '</tr></table>';
   // Right: R/H/E
-  let right = `<table style="border-collapse:collapse"><tr><td style="${h}">R</td><td style="${h}">H</td><td style="${h}">E</td></tr>`;
-  right += `<tr><td style="${c};font-weight:700">${lt.away.r}</td><td style="${c}">${lt.away.h}</td><td style="${c}">${lt.away.e}</td></tr>`;
-  right += `<tr><td style="${c};font-weight:700">${lt.home.r}</td><td style="${c}">${lt.home.h}</td><td style="${c}">${lt.home.e}</td></tr></table>`;
+  let right = `<table style="border-collapse:collapse"><tr><td style="${h};${rowH}">R</td><td style="${h};${rowH}">H</td><td style="${h};${rowH}">E</td></tr>`;
+  right += `<tr><td style="${c};font-weight:700;${rowH}">${lt.away.r}</td><td style="${c};${rowH}">${lt.away.h}</td><td style="${c};${rowH}">${lt.away.e}</td></tr>`;
+  right += `<tr><td style="${c};font-weight:700;${rowH}">${lt.home.r}</td><td style="${c};${rowH}">${lt.home.h}</td><td style="${c};${rowH}">${lt.home.e}</td></tr></table>`;
   return `<div style="display:flex;align-items:flex-start">${left}<div style="overflow-x:auto;flex:1">${mid}</div>${right}</div>`;
 }
 
