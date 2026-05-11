@@ -607,6 +607,22 @@ async function loadPlayer(id) {
       <div class="stat-cell"><div class="val">${s.battersFaced||0}</div><div class="lbl">BF</div></div>
     </div>`;
   }
+
+  // Two-way player: show pitching stats too
+  if (d.is_two_way && d.pitching_stats && d.pitching_stats.gamesPlayed) {
+    const p = d.pitching_stats;
+    html += `<div class="stat-section-label" style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">⚾ Pitching</div><div class="stat-row">
+      <div class="stat-cell"><div class="val">${p.era||'---'}</div><div class="lbl">ERA</div></div>
+      <div class="stat-cell"><div class="val">${(p.wins||0)+'-'+(p.losses||0)}</div><div class="lbl">W-L</div></div>
+      <div class="stat-cell"><div class="val">${p.whip||'---'}</div><div class="lbl">WHIP</div></div>
+      <div class="stat-cell"><div class="val">${p.inningsPitched||'0'}</div><div class="lbl">IP</div></div>
+      <div class="stat-cell"><div class="val">${p.strikeOuts||0}</div><div class="lbl">K</div></div>
+      <div class="stat-cell"><div class="val">${p.gamesPlayed||0}</div><div class="lbl">G</div></div>
+      <div class="stat-cell"><div class="val">${p.strikeoutsPer9Inn||'---'}</div><div class="lbl">K/9</div></div>
+      <div class="stat-cell"><div class="val">${p.baseOnBalls||0}</div><div class="lbl">BB</div></div>
+    </div>`;
+  }
+
   html += '</div>';
 
   // Anomalies

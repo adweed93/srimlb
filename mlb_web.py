@@ -347,20 +347,32 @@ def player_stats(player_id):
                    lambda: statsapi.player_stat_data(player_id, type="season"), ttl_seconds=60)
     stats = {}
     group = ""
+    pitching_stats = {}
+    is_two_way = info.get("position", "") == "TWP"
     is_pitcher = info.get("position", "") == "P"
     preferred = "pitching" if is_pitcher else "hitting"
     fallback = "hitting" if is_pitcher else "pitching"
-    for sg in info.get("stats", []):
-        if sg["group"] == preferred:
-            stats = sg.get("stats", {})
-            group = preferred
-            break
-    if not stats:
+
+    if is_two_way:
+        # Get both hitting and pitching stats
         for sg in info.get("stats", []):
-            if sg["group"] == fallback:
+            if sg["group"] == "hitting" and sg.get("stats", {}).get("gamesPlayed", 0):
                 stats = sg.get("stats", {})
-                group = fallback
+                group = "hitting"
+            elif sg["group"] == "pitching" and sg.get("stats", {}).get("gamesPlayed", 0):
+                pitching_stats = sg.get("stats", {})
+    else:
+        for sg in info.get("stats", []):
+            if sg["group"] == preferred:
+                stats = sg.get("stats", {})
+                group = preferred
                 break
+        if not stats:
+            for sg in info.get("stats", []):
+                if sg["group"] == fallback:
+                    stats = sg.get("stats", {})
+                    group = fallback
+                    break
 
     # Fetch game log and schedule in parallel
     recent_games = []
@@ -638,6 +650,8 @@ def player_stats(player_id):
         "position": info.get("position", ""),
         "team": info.get("current_team", ""),
         "stats": stats,
+        "pitching_stats": pitching_stats,
+        "is_two_way": is_two_way,
         "anomalies": anomalies,
         "red_flags": red_flags,
         "insights": insights,
