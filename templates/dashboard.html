@@ -240,6 +240,11 @@ async function loadScores() {
   const d = await r.json();
   let html = '';
 
+  // Coming Up Next at top
+  html += '<div class="section-header">Coming Up Next</div><div id="upcoming-preview"><div class="empty-state"><div class="icon">⏳</div><div>Loading...</div></div></div>';
+  html += '<div id="upcoming-expand" style="text-align:center;padding:8px"><button class="pill-btn outline" onclick="document.getElementById(\'upcoming-full\').style.display=document.getElementById(\'upcoming-full\').style.display===\'none\'?\'block\':\'none\';this.textContent=this.textContent.includes(\'▼\')?\'▲ Hide Full Schedule\':\'▼ See All (2 Weeks)\'">▼ See All (2 Weeks)</button></div>';
+  html += '<div id="upcoming-full" style="display:none"><div class="empty-state"><div class="icon">⏳</div></div></div>';
+
   if (d.live.length) {
     html += '<div class="section-header">Live</div>';
     d.live.forEach(g => { html += gameCard(g, 'live'); });
@@ -252,16 +257,14 @@ async function loadScores() {
     html += '<div class="section-header">Final</div>';
     d.final.forEach(g => { html += gameCard(g, 'final'); });
   }
-  if (!d.live.length && !d.upcoming.length && !d.final.length) html = '<div class="empty-state"><div class="icon">📅</div><div class="title">No Games Today</div></div>';
+  if (!d.live.length && !d.upcoming.length && !d.final.length) html += '<div class="empty-state"><div class="icon">📅</div><div class="title">No Games Today</div></div>';
 
-  // Next 3 upcoming games (future days)
-  html += '<div class="section-header">Coming Up Next</div><div id="upcoming-preview"><div class="empty-state"><div class="icon">⏳</div><div>Loading...</div></div></div>';
-  html += '<div style="padding:12px;text-align:center"><button class="pill-btn outline" onclick="loadAllUpcoming()">📅 See All Upcoming (2 Weeks)</button>&nbsp;<button class="pill-btn outline" onclick="loadHistoricalGames()">📅 Past 2 Weeks</button></div>';
+  html += '<div style="padding:12px;text-align:center"><button class="pill-btn outline" onclick="loadHistoricalGames()">📅 Past 2 Weeks</button></div>';
   document.getElementById('scores-content').innerHTML = html;
 
-  // Fetch next 3 async
+  // Fetch upcoming async - sort soonest first
   fetch('/api/upcoming').then(r=>r.json()).then(games => {
-    const preview = games.slice(0, 3);
+    const preview = games.slice(0, 3).reverse();
     let ph = '';
     if (preview.length) {
       preview.forEach(g => { ph += upcomingCard(g); });
@@ -269,6 +272,17 @@ async function loadScores() {
       ph = '<div class="empty-state"><div>No upcoming games scheduled</div></div>';
     }
     document.getElementById('upcoming-preview').innerHTML = ph;
+    // Full 2-week schedule
+    if (games.length > 3) {
+      let fh = '';
+      let currentDate = '';
+      games.forEach(g => {
+        const d = g.game_date;
+        if (d !== currentDate) { fh += `<div class="section-header" style="font-size:11px">${new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>`; currentDate = d; }
+        fh += upcomingCard(g);
+      });
+      document.getElementById('upcoming-full').innerHTML = fh;
+    }
   });
 }
 
