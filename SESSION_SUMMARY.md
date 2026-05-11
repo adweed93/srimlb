@@ -510,3 +510,108 @@
 - Remote changed from `git@github.com:` (SSH) to `https://github.com/` (HTTPS)
 - `git config --global credential.helper manager` (Windows Credential Manager)
 - **Commit**: N/A (config change)
+
+
+## Session: May 11, 2026 (Afternoon)
+
+### Infra: Docker Working + Auto-Deploy
+- **Fixed Docker Desktop**: WSL2 had no Linux distro installed; ran `wsl --install Ubuntu`, restarted Docker Desktop
+- **docker-compose.yml** updated: Cloudflare tunnel baked in with token in command, `network_mode: "service:web"` so tunnel reaches Flask via localhost, `restart: unless-stopped` on both services
+- **Renamed project folder**: `srimlb` → `scrimlb` (containers now `scrimlb-web-1`, `scrimlb-tunnel-1`)
+- **Desktop shortcut**: `ScriMLB.lnk` on desktop runs `docker compose up -d` with Docker icon
+- **Deploy script**: `deploy.ps1` does `git push origin master` + `docker compose up --build -d`
+- **PowerShell profile**: `deploy` function available globally in new terminals
+- **Execution policy**: Set via registry `HKCU` for RemoteSigned
+- **Commits**: `9df2044`, `7c39cc0`
+
+### Bugfix: Upcoming Today Games Not Linking to Preview
+- Games in "Upcoming Today" section now call `loadGamePreview()` on click
+- **Commit**: `9df2044`
+
+### UI: Removed "Coming Up Next" Section from Today Tab
+- Redundant with the Upcoming tab; Today page now just shows Live → Upcoming Today → Final
+- **Commit**: `7c39cc0`
+
+### UI: Cleaner Pitcher Layout on Game Preview
+- Replaced cluttered 5-column centered grid with horizontal cards (photo left, stats right)
+- Stacked vertically, one per row — much better on mobile
+- **Commit**: `7c39cc0`
+
+### Feature: Predicted Lineups & Pitchers
+- Backend predicts pitcher from rotation pattern when probable pitcher not announced
+- Backend uses last game's lineup when official lineup not posted
+- Orange "PREDICTED" badge on predicted pitchers and lineups
+- Official lineups/pitchers show without badge
+- Fixed `statsapi.schedule(team=id)` to use 14-day date range (bare call only returns current series)
+- **Commit**: `7c39cc0`
+
+### Bugfix: Pitch Animation Replay Loop
+- Pitches no longer replay every 6s refresh on the most recent at-bat
+- Tracking vars (`_lastAnimatedAbIndex`, `_lastAnimatedPitchCount`) set immediately when animation starts
+- Refresh only re-renders if pitch count actually changed
+- New pitches in live games only animate the new pitch, not all previous ones
+- **Commits**: `7c39cc0`, `e82b429`
+
+### UI: Box Score Mobile Redesign
+- Diamond (60px SVG) + Strike Zone side-by-side in compact row
+- Removed pitch log from inside strike zone (was causing 3-col clutter)
+- Added pitch sequence log as fixed 80px scrollable section below
+- BSO dots shrunk to 5px, single line with `white-space:nowrap`
+- Strike zone always renders frame (no layout shift during animation)
+- Batter/pitcher matchup moved to its own row above diamond/zone
+- Fixed `renderDiamond` refresh overwriting compact diamond with oversized version
+- Score display below diamond (shows previous AB's score, updates after animation)
+- **Commits**: `e82b429`, `8965790`
+
+### UI: Pitch Sequence Improvements
+- All MLB pitch codes handled: `*B`, `D`, `E`, `H`, `M`, `O`, `T`
+- Colors: Red = strike (called/swinging/foul on <2 strikes), Yellow = foul on 2 strikes, Green = ball/HBP, Blue = in play
+- "In play" shows actual event name (Flyout, Single, etc.) instead of generic "Play"
+- Grid layout (12px/24px/32px/auto columns) centered in container
+- Monospace font, no truncation
+- **Commit**: `8965790`
+
+### Feature: Inning Navigation in At-Bat Play-by-Play
+- Two-row grid: ▲1 ▲2 ▲3... above ▼1 ▼2 ▼3... (aligned columns, 20px grid)
+- Tap to jump to first at-bat of that inning half
+- Current inning highlighted in green/bold as you navigate
+- Positioned below the at-bat card
+- **Commit**: `8965790`
+
+### Feature: Score Tracking Per At-Bat
+- Backend returns `away_score`, `home_score`, `away_abbr`, `home_abbr` per at-bat (from `result` not `about`)
+- Score shows below BSO in diamond, updates only after animation completes
+- **Commit**: `8965790`
+
+### UI: Linescore Table Redesign
+- Replaced `<pre>` text with proper HTML table with grid borders
+- 3-panel layout: fixed team names (left), scrollable innings (middle), fixed R/H/E (right)
+- Consistent 26px row heights for alignment
+- Scrollbar only under innings section
+- **Commits**: `8965790`, `9c051a9`, `1e89b75`, `e93e78d`
+
+### Feature: Extra Innings Indicator
+- Final games show `Final/10`, `Final/11` etc. when >9 innings
+- Applied to both Today tab and Past tab
+- **Commit**: `7ddf847`
+
+### UI: Past Tab Date Formatting
+- Dates now show as "Sun, May 10" instead of "2026-05-10"
+- **Commit**: `6b27efb`
+
+### UI: Navigation Improvements
+- Back button returns to source tab (Today/Past/Upcoming) with scroll position
+- Previews and box scores render in Scores panel (no tab switching)
+- Smooth transitions without chaotic tab flipping
+- **Commit**: `b7c285e`
+
+### Current Docker Setup
+- Start: `docker compose up -d` from `C:\Users\Austin\scrimlb`
+- Or double-click ScriMLB desktop shortcut
+- Or type `deploy` in any new PowerShell (pushes + rebuilds)
+- Tunnel auto-connects to scrimlb.com via Cloudflare
+- Both services restart automatically after reboot (if Docker Desktop starts)
+
+### Known Issues
+- Weather not showing on game previews (WEATHER_API_KEY not set in Docker env)
+- Favorites still use JSON file (ephemeral in Docker without volume — currently mounted)
