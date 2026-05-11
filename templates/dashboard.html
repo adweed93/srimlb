@@ -569,7 +569,7 @@ async function loadPlayer(id) {
     if (m) _medals[r.stat] = m;
   });
   const medal = (stat) => _medals[stat] ? `<span style="font-size:10px">${_medals[stat]}</span>` : '';
-  html += `<div class="player-card"><div class="player-header" style="display:flex;align-items:center;gap:12px">${playerImg(id, 50)}<div><div class="name">${d.name}</div><div class="meta">${d.position} • ${d.team}</div></div></div>`;
+  html += `<div class="player-card"><div class="player-header" style="display:flex;align-items:center;gap:12px">${playerImg(id, 50)}<div><div class="name">${d.name}</div><div class="meta">${d.position} • ${d.team}</div></div><button onclick="addFav('player',${id},'${d.name.replace(/'/g,"\\'")}')" style="margin-left:auto;background:none;border:none;font-size:22px;cursor:pointer;color:var(--gold)">☆</button></div>`;
 
   if (d.position !== 'P') {
     html += `<div class="stat-section-label">Slash Line</div><div class="stat-row">
