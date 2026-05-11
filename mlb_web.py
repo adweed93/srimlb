@@ -189,6 +189,38 @@ def remove_favorite():
     return jsonify({"ok": True})
 
 
+@app.route("/api/league-averages")
+def league_averages():
+    """Get current season league averages for stat grading."""
+    def _fetch():
+        import requests as req
+        r = req.get("https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportIds=1&group=hitting&stats=season&gameType=R", timeout=5).json()
+        splits = r["stats"][0]["splits"]
+        n = len(splits)
+        gp = sum(int(s["stat"].get("gamesPlayed", 0)) for s in splits) / n
+        r2 = req.get("https://statsapi.mlb.com/api/v1/teams/stats?season=2026&sportIds=1&group=pitching&stats=season&gameType=R", timeout=5).json()
+        psplits = r2["stats"][0]["splits"]
+        return {
+            "games_per_team": round(gp),
+            "avg": round(sum(float(s["stat"].get("avg", "0")) for s in splits) / n, 3),
+            "obp": round(sum(float(s["stat"].get("obp", "0")) for s in splits) / n, 3),
+            "slg": round(sum(float(s["stat"].get("slg", "0")) for s in splits) / n, 3),
+            "ops": round(sum(float(s["stat"].get("ops", "0")) for s in splits) / n, 3),
+            "hr_per_player": round(sum(int(s["stat"].get("homeRuns", 0)) for s in splits) / n / 9, 1),
+            "rbi_per_player": round(sum(int(s["stat"].get("rbi", 0)) for s in splits) / n / 9, 1),
+            "sb_per_player": round(sum(int(s["stat"].get("stolenBases", 0)) for s in splits) / n / 9, 1),
+            "era": round(sum(float(s["stat"].get("era", "0")) for s in psplits) / n, 2),
+            "whip": round(sum(float(s["stat"].get("whip", "0")) for s in psplits) / n, 2),
+            "k9": round(sum(float(s["stat"].get("strikeoutsPer9Inn", "0")) for s in psplits) / n, 1),
+            "bb9": round(sum(float(s["stat"].get("walksPer9Inn", "0")) for s in psplits) / n, 1),
+        }
+    try:
+        data = _cached("league_averages", _fetch, ttl_seconds=3600)
+        return jsonify(data)
+    except Exception:
+        return jsonify({"avg": .245, "obp": .320, "slg": .400, "ops": .720, "era": 4.10, "whip": 1.30, "k9": 8.5, "hr_per_player": 5, "rbi_per_player": 19, "sb_per_player": 3, "games_per_team": 40})
+
+
 @app.route("/api/live/demo")
 def live_games_demo():
     """Demo endpoint to preview live game cards."""

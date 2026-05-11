@@ -1101,29 +1101,37 @@ async function loadDefense(playerId) {
 }
 
 function gradeStats(context) {
-  // context: 'season' (default, ~40 games), 'full' (162 games), 'career'
-  // Rate stats are the same regardless of timeframe
-  const rate = {
-    'AVG': [.200, .230, .250, .290, .320, .350],
-    'OBP': [.280, .310, .330, .370, .400, .440],
-    'SLG': [.340, .380, .420, .500, .560, .650],
-    'OPS': [.620, .680, .720, .820, .900, 1.000],
-    'ERA': [5.50, 4.50, 3.80, 3.00, 2.20, 1.50],
-    'WHIP': [1.60, 1.40, 1.25, 1.05, 0.90, 0.75],
-    'K/9': [5, 7, 8.5, 10.5, 12, 14],
-    'BB/9': [5.0, 4.0, 3.2, 2.5, 2.0, 1.5],
-    'K/BB': [0.8, 1.2, 2.0, 3.0, 4.0, 5.5],
-    'FLD%': [.950, .965, .975, .985, .995, 1.000],
-    'RF/G': [1.5, 2.0, 2.5, 3.5, 4.0, 4.5],
-  };
-  // Counting stats scaled by context
-  const counting = {
-    season: { 'HR': [2, 5, 10, 18, 25, 35], 'RBI': [5, 12, 20, 35, 45, 60], 'SB': [0, 2, 4, 8, 15, 25], 'K': [20, 40, 60, 90, 120, 160], 'H': [10, 25, 40, 60, 80, 100], 'R': [5, 12, 20, 35, 45, 60] },
-    full:   { 'HR': [5, 12, 22, 35, 45, 60], 'RBI': [20, 40, 70, 100, 130, 160], 'SB': [2, 5, 12, 25, 40, 65], 'K': [80, 120, 170, 220, 270, 320], 'H': [80, 120, 160, 190, 215, 240], 'R': [30, 50, 75, 95, 115, 135] },
-    career: { 'HR': [50, 150, 300, 450, 550, 700], 'RBI': [100, 400, 800, 1200, 1600, 2000], 'SB': [10, 50, 150, 300, 500, 800], 'K': [200, 800, 1500, 2500, 3500, 5000], 'H': [200, 800, 1500, 2500, 3000, 4000], 'R': [100, 400, 800, 1200, 1600, 2000] },
-  };
   const ctx = context || 'season';
-  const benchmarks = {...rate, ...(counting[ctx] || counting.season)};
+  const la = window._leagueAvg;
+  if (!la) {
+    // Fetch league averages once, then re-grade
+    fetch('/api/league-averages').then(r=>r.json()).then(d => { window._leagueAvg = d; gradeStats(ctx); });
+    return;
+  }
+  // Build benchmarks from real league averages (la = league avg)
+  // Pattern: [terrible, bad, avg, good, elite, legendary] = [avg-40%, avg-20%, avg, avg+20%, avg+40%, avg+60%]
+  const pct = (base, pcts) => pcts.map(p => Math.round(base * p * 1000) / 1000);
+  const rate = {
+    'AVG': pct(la.avg, [0.75, 0.88, 1.0, 1.18, 1.30, 1.42]),
+    'OBP': pct(la.obp, [0.78, 0.90, 1.0, 1.12, 1.22, 1.35]),
+    'SLG': pct(la.slg, [0.75, 0.87, 1.0, 1.18, 1.38, 1.60]),
+    'OPS': pct(la.ops, [0.78, 0.88, 1.0, 1.14, 1.26, 1.40]),
+    'ERA': pct(la.era, [1.40, 1.15, 1.0, 0.80, 0.58, 0.40]),
+    'WHIP': pct(la.whip, [1.30, 1.12, 1.0, 0.85, 0.72, 0.60]),
+    'K/9': pct(la.k9, [0.60, 0.80, 1.0, 1.20, 1.40, 1.65]),
+    'BB/9': pct(la.bb9, [1.50, 1.20, 1.0, 0.75, 0.55, 0.40]),
+    'FLD%': [.950, .965, .975, .985, .995, 1.000],
+  };
+  // Counting stats: scale from per-player league avg based on games played
+  const g = la.games_per_team || 40;
+  const scale = ctx === 'career' ? 15 : ctx === 'full' ? (162/g) : 1;
+  const counting = {
+    'HR': [la.hr_per_player*scale*0.3, la.hr_per_player*scale*0.6, la.hr_per_player*scale, la.hr_per_player*scale*1.6, la.hr_per_player*scale*2.3, la.hr_per_player*scale*3.2].map(Math.round),
+    'RBI': [la.rbi_per_player*scale*0.3, la.rbi_per_player*scale*0.6, la.rbi_per_player*scale, la.rbi_per_player*scale*1.5, la.rbi_per_player*scale*2.0, la.rbi_per_player*scale*2.8].map(Math.round),
+    'SB': [0, Math.round(la.sb_per_player*scale*0.5), Math.round(la.sb_per_player*scale), Math.round(la.sb_per_player*scale*2.5), Math.round(la.sb_per_player*scale*4), Math.round(la.sb_per_player*scale*7)],
+    'R': [la.rbi_per_player*scale*0.3, la.rbi_per_player*scale*0.6, la.rbi_per_player*scale, la.rbi_per_player*scale*1.4, la.rbi_per_player*scale*1.8, la.rbi_per_player*scale*2.5].map(Math.round),
+  };
+  const benchmarks = {...rate, ...counting};
 
   document.querySelectorAll('.stat-cell .val').forEach(el => {
     const lbl = el.closest('.stat-cell')?.querySelector('.lbl')?.textContent?.trim();
