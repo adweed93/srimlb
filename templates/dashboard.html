@@ -1329,12 +1329,20 @@ async function loadGamePreview(gameId) {
   // Injuries
   if ((d.away_injuries && d.away_injuries.length) || (d.home_injuries && d.home_injuries.length)) {
     html += '<div class="section-header">🏥 Injuries</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
-    [[d.away_injuries, d.away, d.away_id], [d.home_injuries, d.home, d.home_id]].forEach(([inj, team, tid]) => {
+    [[d.away_injuries, d.away, d.away_id], [d.home_injuries, d.home, d.home_id]].forEach(([inj, team, tid], idx) => {
       if (inj && inj.length) {
-        html += `<div class="player-card" style="flex:1;min-width:160px"><div style="font-weight:600;padding:8px 12px;border-bottom:1px solid var(--border)">${teamLogo(tid,18)} ${team}</div>`;
-        inj.forEach(p => {
+        html += `<div class="player-card" style="flex:1;min-width:160px"><div style="font-weight:600;padding:8px 12px;border-bottom:1px solid var(--border)">${teamLogo(tid,18)} ${team} <span style="color:var(--muted);font-size:10px">(${inj.length})</span></div>`;
+        inj.slice(0,3).forEach(p => {
           html += `<div style="padding:4px 12px;font-size:11px;border-bottom:1px solid var(--border)"><span style="color:var(--red)">●</span> ${p.name} <span style="color:var(--muted)">${p.status}</span></div>`;
         });
+        if (inj.length > 3) {
+          const moreId = `inj-more-${idx}`;
+          html += `<div id="${moreId}" style="display:none">`;
+          inj.slice(3).forEach(p => {
+            html += `<div style="padding:4px 12px;font-size:11px;border-bottom:1px solid var(--border)"><span style="color:var(--red)">●</span> ${p.name} <span style="color:var(--muted)">${p.status}</span></div>`;
+          });
+          html += `</div><div style="padding:6px 12px;font-size:11px;color:var(--blue);cursor:pointer" onclick="const el=document.getElementById('${moreId}');el.style.display=el.style.display==='none'?'block':'none';this.textContent=el.style.display==='none'?'Show ${inj.length-3} more…':'Show less'">Show ${inj.length-3} more…</div>`;
+        }
         html += '</div>';
       }
     });
