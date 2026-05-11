@@ -215,6 +215,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 
 <script>
 let _currentPlayerId = null;
+const _playerCache = {}; // Prefetch cache: {playerId: {data, ts}}
+const CACHE_TTL = 60000; // 60s
 
 const playerImg = (id, size=40) => `<img src="https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${id}/headshot/67/current" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;background:var(--border)" onerror="this.style.display='none'">`;
 const teamLogo = (id, size=24) => `<img src="https://www.mlbstatic.com/team-logos/${id}.svg" style="width:${size}px;height:${size}px" onerror="this.style.display='none'">`;
@@ -497,8 +499,15 @@ async function loadPlayer(id) {
   if (_boxRefreshTimer) { clearInterval(_boxRefreshTimer); _boxRefreshTimer = null; }
   switchTab('stats');
   document.getElementById('stats-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading...</div></div>';
-  const r = await fetch(`/api/player/${id}`);
-  const d = await r.json();
+  let d;
+  const cached = _playerCache[id];
+  if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
+    d = cached.data;
+  } else {
+    const r = await fetch(`/api/player/${id}`);
+    d = await r.json();
+    _playerCache[id] = {data: d, ts: Date.now()};
+  }
   const s = d.stats;
   let html = filterTabs('season');
   html += `<div class="player-card"><div class="player-header" style="display:flex;align-items:center;gap:12px">${playerImg(id, 50)}<div><div class="name">${d.name}</div><div class="meta">${d.position} • ${d.team}</div></div></div>`;
@@ -1217,6 +1226,19 @@ async function clearNotifs() { await fetch('/api/notifications/clear',{method:'P
 // Auto-refresh
 setInterval(() => { if (document.querySelector('#scores.active')) loadScores(); }, 15000);
 loadScores();
+
+// Prefetch favorite players in background after initial load
+setTimeout(async () => {
+  try {
+    const r = await fetch('/api/favorites');
+    const favs = await r.json();
+    for (const p of favs.players.slice(0, 5)) {
+      fetch(`/api/player/${p.id}`).then(r => r.json()).then(d => {
+        _playerCache[p.id] = {data: d, ts: Date.now()};
+      }).catch(() => {});
+    }
+  } catch(e) {}
+}, 500);
 </script>
 </body>
 </html>
