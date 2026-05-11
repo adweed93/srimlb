@@ -1408,7 +1408,7 @@ def game_live_feed(game_id):
     """Get live game feed with runners, count, and last pitch location."""
     try:
         import requests as req
-        feed = req.get(f"https://statsdata.mlb.com/api/v1.1/game/{game_id}/feed/live").json()
+        feed = req.get(f"https://statsapi.mlb.com/api/v1.1/game/{game_id}/feed/live").json()
         linescore = feed.get("liveData", {}).get("linescore", {})
         plays = feed.get("liveData", {}).get("plays", {})
 
