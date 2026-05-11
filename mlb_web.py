@@ -1472,7 +1472,7 @@ def game_preview(game_id):
         home_id = g.get("home_id")
 
         # Probable pitchers with season stats
-        def pitcher_info(name):
+        def pitcher_info(name, predicted=False):
             if not name:
                 return None
             try:
@@ -1487,13 +1487,52 @@ def game_preview(game_id):
                             break
                     return {"id": pid, "name": name, "era": st.get("era", "---"), "wins": st.get("wins", 0),
                             "losses": st.get("losses", 0), "whip": st.get("whip", "---"),
-                            "k": st.get("strikeOuts", 0), "ip": st.get("inningsPitched", "0")}
+                            "k": st.get("strikeOuts", 0), "ip": st.get("inningsPitched", "0"), "predicted": predicted}
             except Exception:
                 pass
-            return {"id": 0, "name": name, "era": "---", "wins": 0, "losses": 0, "whip": "---", "k": 0, "ip": "0"}
+            return {"id": 0, "name": name, "era": "---", "wins": 0, "losses": 0, "whip": "---", "k": 0, "ip": "0", "predicted": predicted}
+
+        def predict_pitcher(team_id):
+            """Predict next starter based on last 5 starters rotation."""
+            try:
+                sched = statsapi.schedule(team=team_id)
+                finals = [x for x in sched if x["status"] == "Final"]
+                starters = []
+                for fg in reversed(finals[-10:]):
+                    try:
+                        gd = statsapi.get("game", {"gamePk": fg["game_id"]})
+                        side = "home" if fg.get("home_id") == team_id else "away"
+                        box = gd["liveData"]["boxscore"]["teams"][side]
+                        pitchers = box.get("pitchers", [])
+                        if pitchers:
+                            pid = pitchers[0]
+                            pdata = box.get("players", {}).get(f"ID{pid}", {})
+                            name = pdata.get("person", {}).get("fullName", "")
+                            if name and name not in starters:
+                                starters.append(name)
+                            if len(starters) >= 5:
+                                break
+                    except Exception:
+                        continue
+                # Predict: next in rotation after the most recent starter
+                if starters:
+                    return starters[-1] if len(starters) == 1 else starters[1]
+            except Exception:
+                pass
+            return None
 
         away_pitcher = pitcher_info(g.get("away_probable_pitcher"))
         home_pitcher = pitcher_info(g.get("home_probable_pitcher"))
+
+        # If no official pitcher, predict one
+        if not away_pitcher:
+            predicted_name = predict_pitcher(away_id)
+            if predicted_name:
+                away_pitcher = pitcher_info(predicted_name, predicted=True)
+        if not home_pitcher:
+            predicted_name = predict_pitcher(home_id)
+            if predicted_name:
+                home_pitcher = pitcher_info(predicted_name, predicted=True)
 
         # Recent lineups from last game
         def get_lineup(team_id):
@@ -1501,7 +1540,7 @@ def game_preview(game_id):
                 sched = statsapi.schedule(team=team_id)
                 finals = [x for x in sched if x["status"] == "Final"]
                 if not finals:
-                    return []
+                    return [], True
                 gd = statsapi.get("game", {"gamePk": finals[-1]["game_id"]})
                 side = "home" if finals[-1].get("home_id") == team_id else "away"
                 box = gd["liveData"]["boxscore"]["teams"][side]
@@ -1512,12 +1551,36 @@ def game_preview(game_id):
                     p = players.get(f"ID{pid}", {})
                     lineup.append({"id": pid, "name": p.get("person", {}).get("fullName", "?"),
                                    "pos": p.get("position", {}).get("abbreviation", "?")})
-                return lineup
+                return lineup, True
             except Exception:
-                return []
+                return [], True
 
-        away_lineup = get_lineup(away_id)
-        home_lineup = get_lineup(home_id)
+        # Check if official lineup is posted (game has battingOrder in live feed)
+        def get_official_lineup(team_id, game_id, is_home):
+            try:
+                gd = statsapi.get("game", {"gamePk": game_id})
+                side = "home" if is_home else "away"
+                box = gd["liveData"]["boxscore"]["teams"][side]
+                order = box.get("battingOrder", [])
+                if order:
+                    players = box.get("players", {})
+                    lineup = []
+                    for pid in order[:9]:
+                        p = players.get(f"ID{pid}", {})
+                        lineup.append({"id": pid, "name": p.get("person", {}).get("fullName", "?"),
+                                       "pos": p.get("position", {}).get("abbreviation", "?")})
+                    return lineup, False  # official
+            except Exception:
+                pass
+            return None, True
+
+        # Try official lineup first, fall back to predicted (from last game)
+        away_lineup, away_lineup_predicted = get_official_lineup(away_id, game_id, False)
+        if away_lineup is None:
+            away_lineup, away_lineup_predicted = get_lineup(away_id)
+        home_lineup, home_lineup_predicted = get_official_lineup(home_id, game_id, True)
+        if home_lineup is None:
+            home_lineup, home_lineup_predicted = get_lineup(home_id)
 
         # Series history (last 30 days between these teams)
         series = []
@@ -1593,6 +1656,8 @@ def game_preview(game_id):
             "home_pitcher": home_pitcher,
             "away_lineup": away_lineup,
             "home_lineup": home_lineup,
+            "away_lineup_predicted": away_lineup_predicted,
+            "home_lineup_predicted": home_lineup_predicted,
             "series": series,
             "away_injuries": away_injuries,
             "home_injuries": home_injuries,
