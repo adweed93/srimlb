@@ -1433,20 +1433,22 @@ function renderStrikeZone(pitches, lastPitch) {
     seq += `<div style="display:flex;align-items:center;gap:4px;margin:2px 0;${i===pitches.length-1?'font-weight:600':''}"><span style="color:${color};min-width:8px">${i+1}</span><span style="color:var(--text)">${p.type||'--'}</span><span style="color:var(--muted)">${p.speed||'--'}</span><span style="color:${color};font-size:9px">${callLabel}</span></div>`;
   });
   seq += '</div>';
-  return `<div style="display:flex;flex-direction:column;align-items:center">
-    <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-      <rect x="${zoneL}" y="${zoneT}" width="${zoneR-zoneL}" height="${zoneB-zoneT}" fill="none" stroke="#555" stroke-width="1.5"/>
-      <line x1="${zoneL+(zoneR-zoneL)/3}" y1="${zoneT}" x2="${zoneL+(zoneR-zoneL)/3}" y2="${zoneB}" stroke="#333" stroke-width="0.5"/>
-      <line x1="${zoneL+2*(zoneR-zoneL)/3}" y1="${zoneT}" x2="${zoneL+2*(zoneR-zoneL)/3}" y2="${zoneB}" stroke="#333" stroke-width="0.5"/>
-      <line x1="${zoneL}" y1="${zoneT+(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
-      <line x1="${zoneL}" y1="${zoneT+2*(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+2*(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
-      ${dots}
-    </svg>
-    <div style="display:flex;gap:8px;font-size:9px;color:var(--muted);margin-top:2px">
-      <span><span style="color:#f44336">●</span> Called</span>
-      <span><span style="color:#ff9800">●</span> Swing</span>
-      <span><span style="color:#4caf50">●</span> Ball</span>
-      <span><span style="color:#2196f3">●</span> In Play</span>
+  return `<div style="display:flex;align-items:flex-start;gap:8px;justify-content:center">
+    <div style="display:flex;flex-direction:column;align-items:center">
+      <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+        <rect x="${zoneL}" y="${zoneT}" width="${zoneR-zoneL}" height="${zoneB-zoneT}" fill="none" stroke="#555" stroke-width="1.5"/>
+        <line x1="${zoneL+(zoneR-zoneL)/3}" y1="${zoneT}" x2="${zoneL+(zoneR-zoneL)/3}" y2="${zoneB}" stroke="#333" stroke-width="0.5"/>
+        <line x1="${zoneL+2*(zoneR-zoneL)/3}" y1="${zoneT}" x2="${zoneL+2*(zoneR-zoneL)/3}" y2="${zoneB}" stroke="#333" stroke-width="0.5"/>
+        <line x1="${zoneL}" y1="${zoneT+(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
+        <line x1="${zoneL}" y1="${zoneT+2*(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+2*(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
+        ${dots}
+      </svg>
+      <div style="display:flex;gap:8px;font-size:9px;color:var(--muted);margin-top:2px">
+        <span><span style="color:#f44336">●</span> Called</span>
+        <span><span style="color:#ff9800">●</span> Swing</span>
+        <span><span style="color:#4caf50">●</span> Ball</span>
+        <span><span style="color:#2196f3">●</span> In Play</span>
+      </div>
     </div>
     ${seq}
   </div>`;
