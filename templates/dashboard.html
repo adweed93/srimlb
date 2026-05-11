@@ -1664,19 +1664,24 @@ async function loadAtBatScroller(gameId) {
 function buildLinescoreTable(d) {
   const lt = d.linescore_table;
   if (!lt || !lt.innings || !lt.innings.length) return `<pre style="padding:12px;font-size:11px;color:var(--text);white-space:pre;font-family:monospace;margin:0">${d.linescore}</pre>`;
-  const cs = 'style="padding:4px 8px;border:1px solid var(--border);text-align:center;font-size:11px;font-family:\'SF Mono\',\'Fira Code\',monospace"';
-  const hs = 'style="padding:4px 8px;border:1px solid var(--border);text-align:center;font-size:10px;color:var(--muted);font-weight:600"';
-  const ts = 'style="padding:4px 8px;border:1px solid var(--border);text-align:left;font-size:11px;font-weight:600;white-space:nowrap"';
-  let html = '<table style="border-collapse:collapse;min-width:100%"><tr><td '+hs+'></td>';
-  lt.innings.forEach(inn => { html += `<td ${hs}>${inn.num}</td>`; });
-  html += `<td ${hs}>R</td><td ${hs}>H</td><td ${hs}>E</td></tr>`;
-  html += `<tr><td ${ts}>${d.away_team}</td>`;
-  lt.innings.forEach(inn => { html += `<td ${cs}>${inn.away!==''?inn.away:'-'}</td>`; });
-  html += `<td ${cs}><b>${lt.away.r}</b></td><td ${cs}>${lt.away.h}</td><td ${cs}>${lt.away.e}</td></tr>`;
-  html += `<tr><td ${ts}>${d.home_team}</td>`;
-  lt.innings.forEach(inn => { html += `<td ${cs}>${inn.home!==''?inn.home:'-'}</td>`; });
-  html += `<td ${cs}><b>${lt.home.r}</b></td><td ${cs}>${lt.home.h}</td><td ${cs}>${lt.home.e}</td></tr>`;
-  html += '</table>';
+  const cs = 'padding:4px 6px;border:1px solid var(--border);text-align:center;font-size:11px;font-family:\'SF Mono\',\'Fira Code\',monospace;min-width:22px';
+  const hs = 'padding:4px 6px;border:1px solid var(--border);text-align:center;font-size:10px;color:var(--muted);font-weight:600;min-width:22px';
+  const ts = 'padding:4px 6px;border:1px solid var(--border);text-align:left;font-size:11px;font-weight:600;white-space:nowrap;position:sticky;left:0;background:var(--card);z-index:1';
+  const rs = 'padding:4px 6px;border:1px solid var(--border);text-align:center;font-size:11px;font-family:\'SF Mono\',\'Fira Code\',monospace;font-weight:700;position:sticky;z-index:1;background:var(--card)';
+  // Calculate right positions for R, H, E (each ~30px wide)
+  let html = '<div style="position:relative;overflow-x:auto"><table style="border-collapse:collapse;width:max-content"><tr>';
+  html += `<td style="${ts}"></td>`;
+  lt.innings.forEach(inn => { html += `<td style="${hs}">${inn.num}</td>`; });
+  html += `<td style="${hs};position:sticky;right:44px;background:var(--card);z-index:1">R</td>`;
+  html += `<td style="${hs};position:sticky;right:22px;background:var(--card);z-index:1">H</td>`;
+  html += `<td style="${hs};position:sticky;right:0;background:var(--card);z-index:1">E</td></tr>`;
+  html += `<tr><td style="${ts}">${d.away_team}</td>`;
+  lt.innings.forEach(inn => { html += `<td style="${cs}">${inn.away!==''?inn.away:'-'}</td>`; });
+  html += `<td style="${rs};right:44px">${lt.away.r}</td><td style="${rs};right:22px">${lt.away.h}</td><td style="${rs};right:0">${lt.away.e}</td></tr>`;
+  html += `<tr><td style="${ts}">${d.home_team}</td>`;
+  lt.innings.forEach(inn => { html += `<td style="${cs}">${inn.home!==''?inn.home:'-'}</td>`; });
+  html += `<td style="${rs};right:44px">${lt.home.r}</td><td style="${rs};right:22px">${lt.home.h}</td><td style="${rs};right:0">${lt.home.e}</td></tr>`;
+  html += '</table></div>';
   return html;
 }
 
