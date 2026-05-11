@@ -1591,9 +1591,10 @@ async function refreshBoxScoreData(gameId) {
     // Update linescore
     const ls = document.getElementById('box-linescore');
     if (ls) ls.innerHTML = `<pre style="padding:12px;font-size:11px;color:var(--text);white-space:pre;font-family:monospace;margin:0">${br.linescore}</pre>`;
-    // Update diamond
+    // Update diamond only if user is on the latest at-bat and no animation running
     const dm = document.getElementById('box-diamond');
-    if (dm && lr.available) {
+    const isAtEnd = _boxAbIndex === _boxAtBats.length - 1;
+    if (dm && lr.available && isAtEnd && !_abAnimTimer) {
       dm.innerHTML = `<div style="text-align:center"><div style="font-size:11px;color:var(--muted);margin-bottom:6px">${lr.inning_half||''} ${lr.inning||''}</div>${renderDiamond(lr.runners, lr.count)}<div style="margin-top:8px;font-size:12px;font-weight:600;color:var(--text)">${lr.batter||''}</div><div style="font-size:11px;color:var(--muted)">vs ${lr.pitcher||''}</div></div>`;
     }
     // Update tables
@@ -1603,10 +1604,20 @@ async function refreshBoxScoreData(gameId) {
     const pr = await fetch(`/api/game/${gameId}/plays`).then(r=>r.json()).catch(()=>null);
     if (pr && pr.plays && pr.plays.length) {
       const wasAtEnd = _boxAbIndex === _boxAtBats.length - 1;
+      const prevLen = _boxAtBats.length;
       _boxAtBats = pr.plays;
-      if (wasAtEnd) _boxAbIndex = _boxAtBats.length - 1;
-      else _boxAbIndex = Math.min(_boxAbIndex, _boxAtBats.length - 1);
-      renderSelectedAtBat();
+      if (wasAtEnd && pr.plays.length > prevLen) {
+        // New at-bat appeared — advance and animate it
+        _boxAbIndex = _boxAtBats.length - 1;
+        renderSelectedAtBat();
+      } else if (wasAtEnd && !_abAnimTimer) {
+        // Same at-bat but maybe new pitches — only re-render if not animating
+        _boxAbIndex = _boxAtBats.length - 1;
+        renderSelectedAtBat();
+      } else {
+        _boxAbIndex = Math.min(_boxAbIndex, _boxAtBats.length - 1);
+        // Don't re-render if user is browsing history or animation is playing
+      }
     }
   } catch(e) {}
 }
