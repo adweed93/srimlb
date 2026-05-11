@@ -232,7 +232,10 @@ const _playerCache = {}; // Prefetch cache: {playerId: {data, ts}}
 const CACHE_TTL = 60000; // 60s
 let _navHistory = [];
 
-function navPush(type, id) { _navHistory.push({type, id}); }
+function navPush(type, id) { 
+  const scrollY = document.getElementById('stats-content')?.scrollTop || document.getElementById('scores-content')?.scrollTop || window.scrollY;
+  _navHistory.push({type, id, scrollY, tab: window._lastScoresTab || 'today'}); 
+}
 function navBack() {
   _navHistory.pop(); // remove current
   const prev = _navHistory.pop();
@@ -241,6 +244,9 @@ function navBack() {
   else if (prev.type==='team') loadTeam(prev.id);
   else if (prev.type==='box') loadBoxScore(prev.id);
   else if (prev.type==='preview') loadGamePreview(prev.id);
+  else if (prev.type==='past') { loadHistoricalGames().then(() => setTimeout(() => window.scrollTo(0, prev.scrollY||0), 100)); }
+  else if (prev.type==='upcoming') { loadUpcomingFull().then(() => setTimeout(() => window.scrollTo(0, prev.scrollY||0), 100)); }
+  else if (prev.type==='today') { switchTab('scores'); loadScores(); }
   else { switchTab('scores'); loadScores(); }
 }
 const backBtn = () => `<div style="padding:8px 16px"><button onclick="navBack()" style="background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;padding:0;font-weight:600">← Back</button></div>`;
@@ -262,6 +268,7 @@ function switchTab(id) {
 // Scores
 async function loadScores() {
   window._viewingHistory = false;
+  window._lastScoresTab = 'today';
   document.getElementById('scores-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'long', month:'short', day:'numeric'});
   const demoMode = new URLSearchParams(window.location.search).get('demo');
   const r = await fetch(demoMode ? '/api/live/demo' : '/api/live');
@@ -288,6 +295,7 @@ async function loadScores() {
 
 async function loadHistoricalGames() {
   window._viewingHistory = true;
+  window._lastScoresTab = 'past';
   document.getElementById('scores-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading past games...</div></div>';
   const r = await fetch('/api/games/history');
   const games = await r.json();
@@ -314,6 +322,7 @@ async function loadHistoricalGames() {
 
 async function loadUpcomingFull() {
   window._viewingHistory = true;
+  window._lastScoresTab = 'upcoming';
   document.getElementById('scores-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading upcoming...</div></div>';
   const r = await fetch('/api/upcoming');
   const games = await r.json();
@@ -1235,6 +1244,9 @@ async function loadFieldAndZone(gameId) {
 let _boxRefreshTimer = null;
 async function loadGamePreview(gameId) {
   window._viewingHistory = true;
+  if (window._lastScoresTab === 'past') navPush('past', null);
+  else if (window._lastScoresTab === 'upcoming') navPush('upcoming', null);
+  else if (window._lastScoresTab === 'today') navPush('today', null);
   navPush('preview', gameId);
   switchTab('stats');
   document.getElementById('stats-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading preview...</div></div>';
@@ -1351,6 +1363,8 @@ async function loadBoxScore(gameId) {
   if (_boxRefreshTimer) clearInterval(_boxRefreshTimer);
   if (_liveRefreshTimer) { clearInterval(_liveRefreshTimer); _liveRefreshTimer = null; }
   if (_teamRefreshTimer) { clearInterval(_teamRefreshTimer); _teamRefreshTimer = null; }
+  if (window._lastScoresTab === 'past') navPush('past', null);
+  else if (window._lastScoresTab === 'upcoming') navPush('upcoming', null);
   navPush('box', gameId);
   switchTab('stats');
   document.getElementById('stats-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading box score...</div></div>';
