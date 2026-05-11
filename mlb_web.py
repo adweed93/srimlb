@@ -1158,30 +1158,31 @@ def player_career(player_id):
 def player_year_by_year(player_id):
     """Get year-by-year historical stats with standout season flags."""
     info = statsapi.player_stat_data(player_id, type="yearByYear")
-    seasons = []
-    group = ""
     is_pitcher = info.get("position", "") == "P"
     preferred = "pitching" if is_pitcher else "hitting"
-    for sg in info.get("stats", []):
-        if sg["group"] == preferred:
-            group = preferred
-            s = sg.get("stats", {})
-            if s:
-                s["season"] = sg.get("season", "")
-                s["team"] = sg.get("team", "")
-                s["team_id"] = sg.get("team_id", "")
+    group = preferred
+
+    # Use raw API to get team info per season
+    seasons = []
+    try:
+        raw = statsapi.get("person", {"personId": player_id, "hydrate": f"stats(group={preferred},type=yearByYear,sportId=1)"})
+        splits = raw.get("people", [{}])[0].get("stats", [{}])[0].get("splits", [])
+        for sp in splits:
+            s = sp.get("stat", {})
+            if s and s.get("gamesPlayed"):
+                s["season"] = sp.get("season", "")
+                s["team"] = sp.get("team", {}).get("name", "")
+                s["team_id"] = sp.get("team", {}).get("id", "")
                 seasons.append(s)
-    # Fallback if no preferred stats found
-    if not seasons:
-        fallback = "hitting" if is_pitcher else "pitching"
+    except Exception:
+        # Fallback to statsapi wrapper
         for sg in info.get("stats", []):
-            if sg["group"] == fallback:
-                group = fallback
+            if sg["group"] == preferred:
                 s = sg.get("stats", {})
                 if s:
                     s["season"] = sg.get("season", "")
-                    s["team"] = sg.get("team", "")
-                    s["team_id"] = sg.get("team_id", "")
+                    s["team"] = sg.get("team", "") or ""
+                    s["team_id"] = sg.get("team_id", "") or ""
                     seasons.append(s)
 
     # Sort chronologically and assign unique keys for mid-season trades
