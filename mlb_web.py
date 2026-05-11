@@ -1507,17 +1507,25 @@ def game_preview(game_id):
             except Exception:
                 pass
 
-        # Odds (requires PROP_ODDS_API_KEY env var)
+        # Odds from ESPN (free, no key needed)
         odds = None
-        odds_key = os.environ.get("PROP_ODDS_API_KEY")
-        if odds_key:
-            try:
-                import requests as req
-                or_ = req.get(f"https://api.propoddsapi.com/beta/odds/mlb?api_key={odds_key}&game_id={game_id}", timeout=3).json()
-                if or_.get("odds"):
-                    odds = or_["odds"]
-            except Exception:
-                pass
+        try:
+            import requests as req
+            game_date = g.get("game_date", "").replace("-", "")
+            espn = req.get(f"https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates={game_date}", timeout=3).json()
+            away_name = g["away_name"].split()[-1].lower()
+            for ev in espn.get("events", []):
+                comp = ev.get("competitions", [{}])[0]
+                teams = [c.get("team", {}).get("displayName", "").lower() for c in comp.get("competitors", [])]
+                if any(away_name in t for t in teams):
+                    ev_odds = comp.get("odds", [])
+                    if ev_odds:
+                        o = ev_odds[0]
+                        odds = {"provider": o.get("provider", {}).get("name", ""), "details": o.get("details", ""),
+                                "over_under": o.get("overUnder"), "spread": o.get("spread")}
+                    break
+        except Exception:
+            pass
 
         return jsonify({
             "available": True,
