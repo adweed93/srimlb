@@ -452,3 +452,61 @@
 ### Enhancement: Star/Favorite Button
 - Gold ☆ button on player dashboard header to quick-add to favorites
 - **Commit**: `8940d53`
+
+
+## Session: May 11, 2026 (Early Morning)
+
+### Bugfix: Box Score Auto-Refresh Resetting At-Bat Position
+- **Problem**: Auto-refresh replaced entire `stats-content` innerHTML every 6s, destroying at-bat scroller state and scroll position
+- **Fix**: Refactored `renderBoxScore` to build stable container divs (`box-linescore`, `box-diamond`, `ab-strike-zone`, `box-tables`). New `refreshBoxScoreData()` only updates those containers without touching the at-bat section.
+- **Commit**: `a302ace`
+
+### Feature: At-Bat Left/Right Navigation with Strike Zone Sync
+- Replaced horizontal scroll at-bat cards with ◀ / ▶ buttons and a counter ("3 / 47")
+- Defaults to the most recent (last) at-bat on load
+- Strike zone renders from the currently selected at-bat's pitch_sequence data
+- Backend updated: pitch_sequence now includes x/y coordinates (pX/pZ) and removed 6-pitch limit
+- **Commit**: `a302ace`
+
+### Feature: Pitch-by-Pitch Animation on At-Bat Change
+- When navigating to a new at-bat, pitches animate into the strike zone one at a time (400ms gap)
+- Ball/Strike/Out indicators update with each pitch (using actual count at that point)
+- Diamond shows previous at-bat's runners, then updates to current at-bat's result after last pitch
+- Backend now returns per-pitch `balls`, `strikes`, `outs` count and end-of-AB `runners` state
+- **Commit**: `11c4a2a`
+
+### Bugfix: Live Game Compatibility for At-Bat Animation
+- `refreshBoxScoreData` no longer clobbers diamond/strike zone if animation is in progress
+- Diamond only updates from live feed when user is on latest at-bat AND no animation running
+- New at-bats auto-advance and animate; browsing past at-bats is undisturbed by refresh
+- **Commit**: `c9b82e8`
+
+### Bugfix: No Auto-Refresh for Past Games
+- Box score auto-refresh timer only starts if `/api/game/{id}/live` confirms game is in progress
+- Final/past games load once with no polling
+- **Commit**: `72b31cb`
+
+### UI: Fixed Layout Sizes on Box Score Page
+- All sections locked to fixed dimensions to prevent layout shift during animation/refresh:
+  - Linescore: `min-height:60px`
+  - Diamond: `min-width:120px; min-height:180px`
+  - Strike zone: fixed `height:320px` with `overflow:hidden`
+  - Pitch sequence log: fixed `height:150px` (max 10 pitches visible)
+  - At-bat card area: `min-height:160px`
+- **Commit**: `6c9aa91`
+
+### UI: Fixed Pitcher Preview Layout on Future Games
+- Replaced `stat-row`/`stat-cell` classes (3-col grid, oversized) with inline 5-column grid
+- Stats use 16px font, align properly in a single row (ERA, W-L, WHIP, K, IP)
+- Removed `flex-wrap` and `min-width:140px` so pitchers stay side-by-side
+- **Commit**: `d95373f`
+
+### UI: Collapsed Injury List on Game Preview
+- Shows only first 3 injuries per team with count badge
+- "Show X more…" toggle expands/collapses the rest
+- **Commit**: `47d8505`
+
+### Infra: Switched Git Remote to HTTPS + Credential Manager
+- Remote changed from `git@github.com:` (SSH) to `https://github.com/` (HTTPS)
+- `git config --global credential.helper manager` (Windows Credential Manager)
+- **Commit**: N/A (config change)
