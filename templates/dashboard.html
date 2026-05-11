@@ -1362,6 +1362,7 @@ async function loadGamePreview(gameId) {
 }
 
 async function loadBoxScore(gameId) {
+  window._viewingHistory = true;
   if (_boxRefreshTimer) clearInterval(_boxRefreshTimer);
   if (_liveRefreshTimer) { clearInterval(_liveRefreshTimer); _liveRefreshTimer = null; }
   if (_teamRefreshTimer) { clearInterval(_teamRefreshTimer); _teamRefreshTimer = null; }
@@ -1373,7 +1374,7 @@ async function loadBoxScore(gameId) {
   // Only auto-refresh if game is live
   try {
     const lr = await fetch(`/api/game/${gameId}/live`).then(r=>r.json());
-    if (lr.available) _boxRefreshTimer = setInterval(() => { if (document.querySelector('#stats.active')) refreshBoxScoreData(gameId); }, 6000);
+    if (lr.available) _boxRefreshTimer = setInterval(() => { if (document.querySelector('#scores.active') && window._viewingHistory) refreshBoxScoreData(gameId); }, 6000);
   } catch(e) {}
 }
 
