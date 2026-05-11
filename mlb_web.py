@@ -1669,6 +1669,48 @@ def game_boxscore(game_id):
         return jsonify({"available": False, "error": str(e)})
 
 
+@app.route("/api/game/<int:game_id>/plays")
+def game_plays(game_id):
+    """Return at-bat play-by-play data for horizontal scrolling."""
+    try:
+        import requests as req
+        feed = req.get(f"https://statsapi.mlb.com/api/v1.1/game/{game_id}/feed/live").json()
+        all_plays = feed.get("liveData", {}).get("plays", {}).get("allPlays", [])
+        at_bats = []
+        for play in all_plays:
+            result = play.get("result", {})
+            about = play.get("about", {})
+            matchup = play.get("matchup", {})
+            if not result.get("description"):
+                continue
+            events = play.get("playEvents", [])
+            pitches = []
+            for ev in events:
+                if ev.get("isPitch"):
+                    pd = ev.get("pitchData", {})
+                    pitches.append({
+                        "speed": pd.get("startSpeed", 0),
+                        "type": ev.get("details", {}).get("type", {}).get("code", ""),
+                        "call": ev.get("details", {}).get("call", {}).get("code", ""),
+                    })
+            at_bats.append({
+                "inning": about.get("inning", 0),
+                "half": about.get("halfInning", ""),
+                "batter": matchup.get("batter", {}).get("fullName", ""),
+                "batter_id": matchup.get("batter", {}).get("id", 0),
+                "pitcher": matchup.get("pitcher", {}).get("fullName", ""),
+                "pitcher_id": matchup.get("pitcher", {}).get("id", 0),
+                "event": result.get("event", ""),
+                "description": result.get("description", ""),
+                "rbi": result.get("rbi", 0),
+                "pitches": len(pitches),
+                "pitch_sequence": pitches[-6:],
+            })
+        return jsonify({"plays": at_bats})
+    except Exception as e:
+        return jsonify({"plays": [], "error": str(e)})
+
+
 @app.route("/api/game/<int:game_id>/live")
 def game_live_feed(game_id):
     """Get live game feed with runners, count, and last pitch location."""

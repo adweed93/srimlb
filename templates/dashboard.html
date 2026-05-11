@@ -1423,6 +1423,38 @@ function renderStrikeZone(pitches, lastPitch) {
   </div>`;
 }
 
+async function loadAtBatScroller(gameId) {
+  const el = document.getElementById(`ab-scroller-${gameId}`);
+  if (!el) return;
+  try {
+    const r = await fetch(`/api/game/${gameId}/plays`);
+    const d = await r.json();
+    if (!d.plays || !d.plays.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px">No play data available</div>'; return; }
+    const eventColor = (ev) => {
+      const e = (ev||'').toLowerCase();
+      if (e.includes('home run')) return 'var(--gold)';
+      if (e.includes('double') || e.includes('triple')) return 'var(--green)';
+      if (e.includes('single') || e.includes('walk')) return 'var(--blue)';
+      if (e.includes('strikeout')) return 'var(--red)';
+      return 'var(--muted)';
+    };
+    let cards = d.plays.map(ab => {
+      const pitchDots = (ab.pitch_sequence||[]).map(p => {
+        const c = p.call==='C'||p.call==='S'||p.call==='T'?'var(--red)':p.call==='B'?'var(--green)':p.call==='F'?'var(--gold)':'var(--blue)';
+        return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c}"></span>`;
+      }).join('');
+      return `<div style="min-width:200px;max-width:200px;padding:12px;border:1px solid var(--border);border-radius:10px;flex-shrink:0">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${ab.half==='top'?'▲':'▼'} ${ab.inning}</div>
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer" onclick="loadPlayer(${ab.batter_id})">${ab.batter}</div>
+        <div style="font-size:10px;color:var(--muted);margin:2px 0">vs ${ab.pitcher}</div>
+        <div style="font-size:12px;font-weight:700;color:${eventColor(ab.event)};margin:6px 0">${ab.event}${ab.rbi?' <span style="font-size:10px;color:var(--gold)">+'+ab.rbi+' RBI</span>':''}</div>
+        <div style="font-size:10px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${ab.description}</div>
+        <div style="display:flex;gap:3px;margin-top:6px;align-items:center">${pitchDots}<span style="font-size:9px;color:var(--muted);margin-left:4px">${ab.pitches}P</span></div>
+      </div>`;
+    }).join('');
+    el.innerHTML = `<div style="display:flex;gap:10px;overflow-x:auto;padding:4px 0;scroll-snap-type:x mandatory">${cards}</div>`;
+  } catch(e) { el.innerHTML = ''; }
+}
 async function renderBoxScore(gameId) {
   const r = await fetch(`/api/game/${gameId}/boxscore`);
   const d = await r.json();
@@ -1452,6 +1484,11 @@ async function renderBoxScore(gameId) {
       html += `</div>`;
     }
   } catch(e) {}
+
+  // At-Bat Play-by-Play Scroller
+  html += `<div class="section-header">At-Bat Play-by-Play</div>`;
+  html += `<div id="ab-scroller-${gameId}" class="player-card" style="padding:12px"><div class="empty-state" style="padding:16px"><div class="icon">⏳</div></div></div>`;
+  setTimeout(() => loadAtBatScroller(gameId), 100);
 
   // Away Batting
   html += `<div class="section-header">${teamLogo(d.away_id)} ${d.away_team} — Batting</div>`;
