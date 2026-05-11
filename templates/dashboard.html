@@ -800,7 +800,7 @@ async function loadPlayerFilter(type) {
       html += '</div>';
     }
     document.getElementById('stats-content').innerHTML = html;
-    gradeStats();
+    gradeStats('career');
   } else {
     // yearByYear - fetch and show dropdown
     const r = await fetch(`/api/player/${_currentPlayerId}/yearByYear`);
@@ -853,7 +853,7 @@ function showYearDashboard() {
     }
   }
   document.getElementById('year-dashboard').innerHTML = html;
-  gradeStats();
+  gradeStats('full');
 }
 
 function buildStatDashboard(s, position) {
@@ -1100,28 +1100,38 @@ async function loadDefense(playerId) {
   gradeStats();
 }
 
-function gradeStats() {
-  // League average benchmarks (2026 approximations)
-  const benchmarks = {
+function gradeStats(context) {
+  // context: 'season' (default, ~40 games), 'full' (162 games), 'career'
+  // Rate stats are the same regardless of timeframe
+  const rate = {
     'AVG': [.200, .230, .250, .290, .320, .350],
     'OBP': [.280, .310, .330, .370, .400, .440],
     'SLG': [.340, .380, .420, .500, .560, .650],
     'OPS': [.620, .680, .720, .820, .900, 1.000],
-    'HR': [3, 8, 15, 25, 35, 50],
-    'RBI': [5, 15, 25, 40, 55, 75],
-    'SB': [0, 2, 5, 12, 20, 35],
     'ERA': [5.50, 4.50, 3.80, 3.00, 2.20, 1.50],
     'WHIP': [1.60, 1.40, 1.25, 1.05, 0.90, 0.75],
     'K/9': [5, 7, 8.5, 10.5, 12, 14],
+    'BB/9': [5.0, 4.0, 3.2, 2.5, 2.0, 1.5],
+    'K/BB': [0.8, 1.2, 2.0, 3.0, 4.0, 5.5],
     'FLD%': [.950, .965, .975, .985, .995, 1.000],
+    'RF/G': [1.5, 2.0, 2.5, 3.5, 4.0, 4.5],
   };
+  // Counting stats scaled by context
+  const counting = {
+    season: { 'HR': [2, 5, 10, 18, 25, 35], 'RBI': [5, 12, 20, 35, 45, 60], 'SB': [0, 2, 4, 8, 15, 25], 'K': [20, 40, 60, 90, 120, 160], 'H': [10, 25, 40, 60, 80, 100], 'R': [5, 12, 20, 35, 45, 60] },
+    full:   { 'HR': [5, 12, 22, 35, 45, 60], 'RBI': [20, 40, 70, 100, 130, 160], 'SB': [2, 5, 12, 25, 40, 65], 'K': [80, 120, 170, 220, 270, 320], 'H': [80, 120, 160, 190, 215, 240], 'R': [30, 50, 75, 95, 115, 135] },
+    career: { 'HR': [50, 150, 300, 450, 550, 700], 'RBI': [100, 400, 800, 1200, 1600, 2000], 'SB': [10, 50, 150, 300, 500, 800], 'K': [200, 800, 1500, 2500, 3500, 5000], 'H': [200, 800, 1500, 2500, 3000, 4000], 'R': [100, 400, 800, 1200, 1600, 2000] },
+  };
+  const ctx = context || 'season';
+  const benchmarks = {...rate, ...(counting[ctx] || counting.season)};
+
   document.querySelectorAll('.stat-cell .val').forEach(el => {
     const lbl = el.closest('.stat-cell')?.querySelector('.lbl')?.textContent?.trim();
     const b = benchmarks[lbl];
     if (!b) return;
     let val = parseFloat(el.textContent.replace(/[🥇🥈🥉]/g, ''));
     if (isNaN(val)) return;
-    const reversed = ['ERA', 'WHIP'].includes(lbl);
+    const reversed = ['ERA', 'WHIP', 'BB/9'].includes(lbl);
     let grade;
     if (reversed) {
       grade = val <= b[5] ? 'legendary' : val <= b[4] ? 'elite' : val <= b[3] ? 'good' : val <= b[2] ? 'avg' : val <= b[1] ? 'bad' : 'terrible';
