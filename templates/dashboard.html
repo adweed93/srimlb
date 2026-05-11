@@ -1190,7 +1190,7 @@ async function renderBoxScore(gameId) {
   html += `<div class="player-card" style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">`;
   html += `<tr style="color:var(--muted);text-align:center;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px">Batter</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>K</th><th>AVG</th></tr>`;
   d.away_batters.forEach(b => {
-    html += `<tr style="border-bottom:1px solid var(--border);text-align:center"><td style="text-align:left;padding:8px;font-weight:500">${playerImg(b.id,20)} ${b.name} <span style="color:var(--muted);font-size:10px">${b.pos}</span></td><td>${b.ab}</td><td>${b.r}</td><td>${b.h}</td><td>${b.rbi}</td><td>${b.bb}</td><td>${b.k}</td><td style="color:var(--muted)">${b.avg}</td></tr>`;
+    html += `<tr style="border-bottom:1px solid var(--border);text-align:center"><td style="text-align:left;padding:8px;font-weight:500;cursor:pointer" onclick="loadPlayer(${b.id})">${playerImg(b.id,20)} ${b.name} <span style="color:var(--muted);font-size:10px">${b.pos}</span></td><td>${b.ab}</td><td>${b.r}</td><td>${b.h}</td><td>${b.rbi}</td><td>${b.bb}</td><td>${b.k}</td><td style="color:var(--muted)">${b.avg}</td></tr>`;
   });
   html += `</table></div>`;
 
@@ -1199,7 +1199,7 @@ async function renderBoxScore(gameId) {
   html += `<div class="player-card" style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">`;
   html += `<tr style="color:var(--muted);text-align:center;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px">Batter</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>BB</th><th>K</th><th>AVG</th></tr>`;
   d.home_batters.forEach(b => {
-    html += `<tr style="border-bottom:1px solid var(--border);text-align:center"><td style="text-align:left;padding:8px;font-weight:500">${playerImg(b.id,20)} ${b.name} <span style="color:var(--muted);font-size:10px">${b.pos}</span></td><td>${b.ab}</td><td>${b.r}</td><td>${b.h}</td><td>${b.rbi}</td><td>${b.bb}</td><td>${b.k}</td><td style="color:var(--muted)">${b.avg}</td></tr>`;
+    html += `<tr style="border-bottom:1px solid var(--border);text-align:center"><td style="text-align:left;padding:8px;font-weight:500;cursor:pointer" onclick="loadPlayer(${b.id})">${playerImg(b.id,20)} ${b.name} <span style="color:var(--muted);font-size:10px">${b.pos}</span></td><td>${b.ab}</td><td>${b.r}</td><td>${b.h}</td><td>${b.rbi}</td><td>${b.bb}</td><td>${b.k}</td><td style="color:var(--muted)">${b.avg}</td></tr>`;
   });
   html += `</table></div>`;
 
@@ -1208,7 +1208,7 @@ async function renderBoxScore(gameId) {
   html += `<div class="player-card" style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">`;
   html += `<tr style="color:var(--muted);text-align:center;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px">Pitcher</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>K</th><th>ERA</th></tr>`;
   d.away_pitchers.forEach(p => {
-    html += `<tr style="border-bottom:1px solid var(--border);text-align:center"><td style="text-align:left;padding:8px;font-weight:500">${playerImg(p.id,20)} ${p.name}</td><td>${p.ip}</td><td>${p.h}</td><td>${p.r}</td><td>${p.er}</td><td>${p.bb}</td><td>${p.k}</td><td style="color:var(--muted)">${p.era}</td></tr>`;
+    html += `<tr style="border-bottom:1px solid var(--border);text-align:center"><td style="text-align:left;padding:8px;font-weight:500;cursor:pointer" onclick="loadPlayer(${p.id})">${playerImg(p.id,20)} ${p.name}</td><td>${p.ip}</td><td>${p.h}</td><td>${p.r}</td><td>${p.er}</td><td>${p.bb}</td><td>${p.k}</td><td style="color:var(--muted)">${p.era}</td></tr>`;
   });
   html += `</table></div>`;
 
@@ -1217,7 +1217,7 @@ async function renderBoxScore(gameId) {
   html += `<div class="player-card" style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">`;
   html += `<tr style="color:var(--muted);text-align:center;border-bottom:1px solid var(--border)"><th style="text-align:left;padding:8px">Pitcher</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>K</th><th>ERA</th></tr>`;
   d.home_pitchers.forEach(p => {
-    html += `<tr style="border-bottom:1px solid var(--border);text-align:center"><td style="text-align:left;padding:8px;font-weight:500">${playerImg(p.id,20)} ${p.name}</td><td>${p.ip}</td><td>${p.h}</td><td>${p.r}</td><td>${p.er}</td><td>${p.bb}</td><td>${p.k}</td><td style="color:var(--muted)">${p.era}</td></tr>`;
+    html += `<tr style="border-bottom:1px solid var(--border);text-align:center"><td style="text-align:left;padding:8px;font-weight:500;cursor:pointer" onclick="loadPlayer(${p.id})">${playerImg(p.id,20)} ${p.name}</td><td>${p.ip}</td><td>${p.h}</td><td>${p.r}</td><td>${p.er}</td><td>${p.bb}</td><td>${p.k}</td><td style="color:var(--muted)">${p.era}</td></tr>`;
   });
   html += `</table></div>`;
 
