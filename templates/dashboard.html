@@ -268,10 +268,11 @@ async function loadScores() {
 
   document.getElementById('scores-content').innerHTML = html;
 
-  // Fetch next 3 upcoming async (cached - only fetch once)
+  // Fetch next 3 upcoming async (cached - refreshes every 10 min)
   if (document.getElementById('upcoming-preview')) {
-    if (window._upcomingCache) {
-      const preview = window._upcomingCache.slice(0, 3).reverse();
+    const cacheValid = window._upcomingCache && (Date.now() - (window._upcomingCacheTs||0)) < 600000;
+    if (cacheValid) {
+      const preview = window._upcomingCache.slice(0, 3);
       let ph = preview.length ? preview.map(g => upcomingCard(g)).join('') : '<div class="empty-state"><div>No upcoming games</div></div>';
       const el = document.getElementById('upcoming-preview');
       if (el) el.innerHTML = ph;
@@ -279,7 +280,8 @@ async function loadScores() {
       fetch('/api/upcoming').then(r=>r.json()).then(games => {
         if (window._viewingHistory) return;
         window._upcomingCache = games;
-        const preview = games.slice(0, 3).reverse();
+        window._upcomingCacheTs = Date.now();
+        const preview = games.slice(0, 3);
         let ph = preview.length ? preview.map(g => upcomingCard(g)).join('') : '<div class="empty-state"><div>No upcoming games</div></div>';
         const el = document.getElementById('upcoming-preview');
         if (el) el.innerHTML = ph;
