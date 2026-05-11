@@ -373,7 +373,7 @@ function upcomingCard(g) {
   const dt = g.game_time ? new Date(g.game_time) : null;
   const dateStr = dt ? dt.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'}) : g.game_date || '';
   const timeStr = dt ? dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : 'TBD';
-  return `<div class="game-card">
+  return `<div class="game-card" ${g.game_id?`onclick="loadGamePreview(${g.game_id})" style="cursor:pointer"`:''}> 
     <div class="game-status"><span>📅 ${dateStr} • ${timeStr}</span>${g.fav?'<span class="fav-badge">★ FAV</span>':''}</div>
     <div class="team-row">${teamLogo(g.away_id)}<span class="team-name">${g.away}</span></div>
     <div class="team-row">${teamLogo(g.home_id)}<span class="team-name">${g.home}</span></div>
@@ -1132,6 +1132,72 @@ async function loadFieldAndZone(gameId) {
 
 // In-App Box Score
 let _boxRefreshTimer = null;
+async function loadGamePreview(gameId) {
+  window._viewingHistory = true;
+  switchTab('stats');
+  document.getElementById('stats-content').innerHTML = '<div class="empty-state"><div class="icon">⏳</div><div>Loading preview...</div></div>';
+  const r = await fetch(`/api/game/${gameId}/preview`);
+  const d = await r.json();
+  if (!d.available) { document.getElementById('stats-content').innerHTML = '<div class="empty-state"><div>Preview unavailable</div></div>'; return; }
+
+  const gt = d.game_time ? new Date(d.game_time).toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}) : '';
+  let html = `<div class="player-card"><div class="player-header" style="text-align:center">
+    <div class="name">${teamLogo(d.away_id,28)} ${d.away} <span style="color:var(--muted)">@</span> ${d.home} ${teamLogo(d.home_id,28)}</div>
+    <div class="meta">${gt} • ${d.venue}</div></div></div>`;
+
+  // Probable Pitchers
+  html += '<div class="section-header">Probable Pitchers</div><div class="player-card" style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;padding:16px">';
+  [['away', d.away_pitcher, d.away], ['home', d.home_pitcher, d.home]].forEach(([side, p, team]) => {
+    if (p) {
+      html += `<div style="flex:1;min-width:140px;text-align:center;padding:12px;border:1px solid var(--border);border-radius:8px">
+        <div style="cursor:pointer" onclick="loadPlayer(${p.id})">${playerImg(p.id,40)}</div>
+        <div style="font-weight:600;margin-top:6px;cursor:pointer" onclick="loadPlayer(${p.id})">${p.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${team}</div>
+        <div class="stat-row" style="margin-top:8px;justify-content:center">
+          <div class="stat-cell"><div class="val">${p.era}</div><div class="lbl">ERA</div></div>
+          <div class="stat-cell"><div class="val">${p.wins}-${p.losses}</div><div class="lbl">W-L</div></div>
+          <div class="stat-cell"><div class="val">${p.whip}</div><div class="lbl">WHIP</div></div>
+          <div class="stat-cell"><div class="val">${p.k}</div><div class="lbl">K</div></div>
+          <div class="stat-cell"><div class="val">${p.ip}</div><div class="lbl">IP</div></div>
+        </div></div>`;
+    }
+  });
+  html += '</div>';
+
+  // Projected Lineups
+  html += '<div class="section-header">Projected Lineups (from last game)</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  [['away', d.away_lineup, d.away, d.away_id], ['home', d.home_lineup, d.home, d.home_id]].forEach(([side, lineup, team, tid]) => {
+    html += `<div class="player-card" style="flex:1;min-width:160px"><div style="font-weight:600;padding:8px 12px;border-bottom:1px solid var(--border)">${teamLogo(tid,18)} ${team}</div>`;
+    if (lineup.length) {
+      lineup.forEach((p, i) => {
+        html += `<div style="padding:4px 12px;font-size:12px;border-bottom:1px solid var(--border);cursor:pointer" onclick="loadPlayer(${p.id})"><span style="color:var(--muted);width:18px;display:inline-block">${i+1}.</span> ${p.name} <span style="color:var(--muted);font-size:10px">${p.pos}</span></div>`;
+      });
+    } else {
+      html += '<div style="padding:12px;color:var(--muted);font-size:12px">Lineup not yet available</div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Series History
+  if (d.series.length) {
+    const awayWins = d.series.filter(s => s.away_score > s.home_score).length;
+    const homeWins = d.series.length - awayWins;
+    html += `<div class="section-header">Series History (Last 60 Days) — ${d.away.split(' ').pop()} ${awayWins}, ${d.home.split(' ').pop()} ${homeWins}</div><div class="player-card">`;
+    d.series.forEach(s => {
+      const awayWon = s.away_score > s.home_score;
+      html += `<div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="loadBoxScore(${s.game_id})">
+        <span style="font-size:12px">${s.date}</span>
+        <span style="font-size:12px"><span style="font-weight:${awayWon?'700':'400'}">${s.away_score}</span> - <span style="font-weight:${!awayWon?'700':'400'}">${s.home_score}</span></span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  html += `<div style="padding:12px;text-align:center"><button class="pill-btn outline" onclick="loadScores()">← Back to Scores</button></div>`;
+  document.getElementById('stats-content').innerHTML = html;
+}
+
 async function loadBoxScore(gameId) {
   if (_boxRefreshTimer) clearInterval(_boxRefreshTimer);
   if (_liveRefreshTimer) { clearInterval(_liveRefreshTimer); _liveRefreshTimer = null; }

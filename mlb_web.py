@@ -1403,6 +1403,96 @@ def games_history():
     return jsonify(all_games)
 
 
+@app.route("/api/game/<int:game_id>/preview")
+def game_preview(game_id):
+    """Preview an upcoming game: probable pitchers, projected lineups, series history."""
+    try:
+        # Get game info
+        game_data = statsapi.schedule(game_id=game_id)
+        if not game_data:
+            return jsonify({"available": False})
+        g = game_data[0]
+        away_id = g.get("away_id")
+        home_id = g.get("home_id")
+
+        # Probable pitchers with season stats
+        def pitcher_info(name):
+            if not name:
+                return None
+            try:
+                players = statsapi.lookup_player(name)
+                if players:
+                    pid = players[0]["id"]
+                    d = statsapi.player_stat_data(pid, type="season", group="pitching")
+                    st = {}
+                    for sg in d.get("stats", []):
+                        if sg["group"] == "pitching":
+                            st = sg.get("stats", {})
+                            break
+                    return {"id": pid, "name": name, "era": st.get("era", "---"), "wins": st.get("wins", 0),
+                            "losses": st.get("losses", 0), "whip": st.get("whip", "---"),
+                            "k": st.get("strikeOuts", 0), "ip": st.get("inningsPitched", "0")}
+            except Exception:
+                pass
+            return {"id": 0, "name": name, "era": "---", "wins": 0, "losses": 0, "whip": "---", "k": 0, "ip": "0"}
+
+        away_pitcher = pitcher_info(g.get("away_probable_pitcher"))
+        home_pitcher = pitcher_info(g.get("home_probable_pitcher"))
+
+        # Recent lineups from last game
+        def get_lineup(team_id):
+            try:
+                sched = statsapi.schedule(team=team_id)
+                finals = [x for x in sched if x["status"] == "Final"]
+                if not finals:
+                    return []
+                gd = statsapi.get("game", {"gamePk": finals[-1]["game_id"]})
+                side = "home" if finals[-1].get("home_id") == team_id else "away"
+                box = gd["liveData"]["boxscore"]["teams"][side]
+                order = box.get("battingOrder", [])
+                players = box.get("players", {})
+                lineup = []
+                for pid in order[:9]:
+                    p = players.get(f"ID{pid}", {})
+                    lineup.append({"id": pid, "name": p.get("person", {}).get("fullName", "?"),
+                                   "pos": p.get("position", {}).get("abbreviation", "?")})
+                return lineup
+            except Exception:
+                return []
+
+        away_lineup = get_lineup(away_id)
+        home_lineup = get_lineup(home_id)
+
+        # Series history (last 30 days between these teams)
+        series = []
+        try:
+            start = (datetime.now() - timedelta(days=60)).strftime("%m/%d/%Y")
+            end = datetime.now().strftime("%m/%d/%Y")
+            matchups = statsapi.schedule(team=away_id, opponent=home_id, start_date=start, end_date=end)
+            for m in matchups:
+                if m["status"] == "Final":
+                    series.append({"date": m["game_date"], "away": m["away_name"], "home": m["home_name"],
+                                   "away_score": m.get("away_score", 0), "home_score": m.get("home_score", 0),
+                                   "game_id": m.get("game_id")})
+        except Exception:
+            pass
+
+        return jsonify({
+            "available": True,
+            "away": g["away_name"], "home": g["home_name"],
+            "away_id": away_id, "home_id": home_id,
+            "game_time": g.get("game_datetime", ""),
+            "venue": g.get("venue_name", ""),
+            "away_pitcher": away_pitcher,
+            "home_pitcher": home_pitcher,
+            "away_lineup": away_lineup,
+            "home_lineup": home_lineup,
+            "series": series,
+        })
+    except Exception as e:
+        return jsonify({"available": False, "error": str(e)})
+
+
 @app.route("/api/game/<int:game_id>/boxscore")
 def game_boxscore(game_id):
     """Full in-app box score: linescore + batting/pitching lines."""
