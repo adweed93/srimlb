@@ -268,15 +268,23 @@ async function loadScores() {
 
   document.getElementById('scores-content').innerHTML = html;
 
-  // Fetch next 3 upcoming async
+  // Fetch next 3 upcoming async (cached - only fetch once)
   if (document.getElementById('upcoming-preview')) {
-    fetch('/api/upcoming').then(r=>r.json()).then(games => {
-      if (window._viewingHistory) return;
-      const preview = games.slice(0, 3).reverse();
+    if (window._upcomingCache) {
+      const preview = window._upcomingCache.slice(0, 3).reverse();
       let ph = preview.length ? preview.map(g => upcomingCard(g)).join('') : '<div class="empty-state"><div>No upcoming games</div></div>';
       const el = document.getElementById('upcoming-preview');
       if (el) el.innerHTML = ph;
-    });
+    } else {
+      fetch('/api/upcoming').then(r=>r.json()).then(games => {
+        if (window._viewingHistory) return;
+        window._upcomingCache = games;
+        const preview = games.slice(0, 3).reverse();
+        let ph = preview.length ? preview.map(g => upcomingCard(g)).join('') : '<div class="empty-state"><div>No upcoming games</div></div>';
+        const el = document.getElementById('upcoming-preview');
+        if (el) el.innerHTML = ph;
+      });
+    }
   }
 }
 
