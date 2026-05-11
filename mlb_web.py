@@ -1460,6 +1460,7 @@ def game_live_feed(game_id):
                     "y": c.get("pZ", 0),
                     "call": ev.get("details", {}).get("call", {}).get("code", ""),
                     "type": ev.get("details", {}).get("type", {}).get("code", ""),
+                    "speed": pd.get("startSpeed", 0),
                 })
 
         # Inning info
@@ -1494,11 +1495,11 @@ def game_live_demo():
         "inning_half": "Top",
         "last_pitch": {"x": 0.3, "y": 2.8, "type": "FF", "speed": 97.4, "description": "Foul", "call": "Foul"},
         "pitches": [
-            {"x": -0.5, "y": 3.2, "call": "B"},
-            {"x": 0.1, "y": 2.1, "call": "C"},
-            {"x": 0.8, "y": 1.8, "call": "B"},
-            {"x": -0.2, "y": 2.5, "call": "S"},
-            {"x": 0.3, "y": 2.8, "call": "S"},
+            {"x": -0.5, "y": 3.2, "call": "B", "type": "FF", "speed": 96.2},
+            {"x": 0.1, "y": 2.1, "call": "C", "type": "FF", "speed": 97.1},
+            {"x": 0.8, "y": 1.8, "call": "B", "type": "SL", "speed": 88.4},
+            {"x": -0.2, "y": 2.5, "call": "S", "type": "CH", "speed": 90.3},
+            {"x": 0.3, "y": 2.8, "call": "S", "type": "FF", "speed": 97.4},
         ],
     })
 

@@ -1049,8 +1049,6 @@ function renderDiamond(runners, count) {
 
 function renderStrikeZone(pitches, lastPitch) {
   if (!pitches || !pitches.length) return '';
-  // Zone: pX ranges roughly -1.5 to 1.5, pZ roughly 1.5 to 3.5
-  // Map to SVG 0-120 with zone box in center
   const w = 120, h = 140, pad = 20;
   const zoneL = pad, zoneR = w - pad, zoneT = pad, zoneB = h - pad;
   function mapX(px) { return pad + ((px + 1.5) / 3.0) * (w - 2*pad); }
@@ -1060,15 +1058,20 @@ function renderStrikeZone(pitches, lastPitch) {
     if (p.x === 0 && p.y === 0) return;
     const cx = mapX(p.x), cy = mapY(p.y);
     const isLast = i === pitches.length - 1;
-    const color = p.call === 'C' ? '#f44336' : p.call === 'B' ? '#4caf50' : p.call === 'S' ? '#ff9800' : p.call === 'X' ? '#2196f3' : '#888';
-    const r = isLast ? 6 : 4;
+    const color = p.call === 'C' ? '#f44336' : p.call === 'B' ? '#4caf50' : p.call === 'S' || p.call === 'F' ? '#ff9800' : p.call === 'X' ? '#2196f3' : '#888';
+    const r = isLast ? 7 : 5;
     const opacity = isLast ? 1 : 0.6;
     dots += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" opacity="${opacity}" stroke="${isLast?'#fff':'none'}" stroke-width="${isLast?1.5:0}"/>`;
+    dots += `<text x="${cx}" y="${cy+3}" text-anchor="middle" font-size="5" fill="#fff" opacity="${opacity}" font-weight="bold">${i+1}</text>`;
   });
-  let desc = '';
-  if (lastPitch && lastPitch.speed) {
-    desc = `<div style="font-size:10px;color:var(--muted);margin-top:4px;text-align:center">${lastPitch.speed} mph ${lastPitch.type || ''} — ${lastPitch.call || ''}</div>`;
-  }
+  // Pitch sequence log
+  let seq = '<div style="margin-top:8px;font-size:10px;text-align:left;max-width:140px">';
+  pitches.forEach((p, i) => {
+    const color = p.call === 'C' ? '#f44336' : p.call === 'B' ? '#4caf50' : p.call === 'S' || p.call === 'F' ? '#ff9800' : p.call === 'X' ? '#2196f3' : '#888';
+    const callLabel = p.call === 'C' ? 'Called' : p.call === 'B' ? 'Ball' : p.call === 'S' ? 'Swing' : p.call === 'F' ? 'Foul' : p.call === 'X' ? 'In Play' : p.call || '?';
+    seq += `<div style="display:flex;align-items:center;gap:4px;margin:2px 0;${i===pitches.length-1?'font-weight:600':''}"><span style="color:${color};min-width:8px">${i+1}</span><span style="color:var(--text)">${p.type||'--'}</span><span style="color:var(--muted)">${p.speed||'--'}</span><span style="color:${color};font-size:9px">${callLabel}</span></div>`;
+  });
+  seq += '</div>';
   return `<div style="display:flex;flex-direction:column;align-items:center">
     <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
       <rect x="${zoneL}" y="${zoneT}" width="${zoneR-zoneL}" height="${zoneB-zoneT}" fill="none" stroke="#555" stroke-width="1.5"/>
@@ -1077,13 +1080,14 @@ function renderStrikeZone(pitches, lastPitch) {
       <line x1="${zoneL}" y1="${zoneT+(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
       <line x1="${zoneL}" y1="${zoneT+2*(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+2*(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
       ${dots}
-    </svg>${desc}
+    </svg>
     <div style="display:flex;gap:8px;font-size:9px;color:var(--muted);margin-top:2px">
       <span><span style="color:#f44336">●</span> Called</span>
       <span><span style="color:#ff9800">●</span> Swing</span>
       <span><span style="color:#4caf50">●</span> Ball</span>
       <span><span style="color:#2196f3">●</span> In Play</span>
     </div>
+    ${seq}
   </div>`;
 }
 
