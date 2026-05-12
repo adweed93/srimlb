@@ -1546,7 +1546,7 @@ function renderSelectedAtBat() {
   const prevBtn = document.getElementById('ab-prev-btn');
   const nextBtn = document.getElementById('ab-next-btn');
   if (prevBtn) prevBtn.style.visibility = _boxAbIndex <= 0 ? 'hidden' : 'visible';
-  if (nextBtn) nextBtn.style.visibility = _boxAbIndex >= _boxAtBats.length - 1 ? 'hidden' : 'visible';
+  if (nextBtn) nextBtn.style.visibility = (_boxAbIndex >= _boxAtBats.length - 1 && _showingLiveCard) ? 'hidden' : 'visible';
   highlightInningNav();
 
   // Setup diamond with BSO if present
@@ -1648,6 +1648,13 @@ function abNav(dir) {
     return;
   }
   const newIdx = Math.max(0, Math.min(_boxAtBats.length - 1, _boxAbIndex + dir));
+  // If at last completed AB and pressing forward, go back to live
+  if (newIdx === _boxAbIndex && dir === 1 && !_showingLiveCard) {
+    _showingLiveCard = true;
+    _lastUserNavTime = 0;
+    renderSelectedAtBat();
+    return;
+  }
   if (newIdx === _boxAbIndex) return;
   _boxAbIndex = newIdx;
   _showingLiveCard = false;
