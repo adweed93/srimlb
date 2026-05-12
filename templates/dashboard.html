@@ -1535,7 +1535,12 @@ function renderSelectedAtBat() {
   </div>`;
   if (counter) counter.textContent = `${_boxAbIndex+1} / ${_boxAtBats.length}`;
   const liveBtn = document.getElementById('ab-live-btn');
-  if (liveBtn) liveBtn.style.display = _boxAbIndex < _boxAtBats.length - 1 ? 'block' : 'none';
+  if (liveBtn) {
+    const isLive = _boxAbIndex >= _boxAtBats.length - 1;
+    liveBtn.style.background = isLive ? 'var(--red)' : '#555';
+    liveBtn.style.boxShadow = isLive ? '0 0 6px var(--red)' : 'none';
+    liveBtn.style.cursor = isLive ? 'default' : 'pointer';
+  }
   highlightInningNav();
 
   // Setup diamond with BSO if present
@@ -1695,7 +1700,6 @@ async function loadAtBatScroller(gameId) {
       <button onclick="abNav(1)" style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer">▶</button>
     </div>
     <div id="ab-counter" style="text-align:center;font-size:10px;color:var(--muted);margin-top:6px"></div>
-    <div id="ab-live-btn" style="text-align:center;margin-top:6px;display:none"><button onclick="abGoLive()" style="background:var(--red);color:#fff;border:none;border-radius:12px;padding:4px 12px;font-size:10px;font-weight:700;cursor:pointer">● LIVE</button></div>
     <div id="ab-inning-nav" style="display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:6px"></div>`;
     buildInningNav();
     renderSelectedAtBat();
@@ -1830,7 +1834,8 @@ async function renderBoxScore(gameId) {
   // Live current batter card
   html += `<div id="box-live-batter" class="player-card" style="padding:12px;display:none"></div>`;
   // Diamond + Strike Zone container (stacked vertically for mobile)
-  html += `<div class="player-card" style="padding:12px">`;
+  html += `<div class="player-card" style="padding:12px;position:relative">`;
+  html += `<div id="ab-live-btn" onclick="abGoLive()" style="position:absolute;top:8px;left:12px;font-size:9px;font-weight:700;cursor:pointer;padding:3px 8px;border-radius:10px;background:var(--red);color:#fff;box-shadow:0 0 6px var(--red);transition:all .3s">● LIVE</div>`;
   html += `<div id="ab-matchup" style="text-align:center;font-size:11px;margin-bottom:8px;height:16px"><span style="font-weight:600;color:var(--text)"></span></div>`;
   html += `<div style="display:flex;align-items:center;justify-content:center;gap:16px">`;
   html += `<div id="box-diamond" style="width:100px;height:105px"></div>`;
