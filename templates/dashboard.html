@@ -1590,6 +1590,7 @@ function renderSelectedAtBat() {
   }
 
   let i = skipCount;
+  const animSpeed = (_boxAbIndex === _boxAtBats.length - 1) ? 400 : 1500;
   _abAnimTimer = setInterval(() => {
     if (i >= pitches.length) {
       clearInterval(_abAnimTimer); _abAnimTimer = null;
@@ -1606,7 +1607,7 @@ function renderSelectedAtBat() {
     renderAbCount(pitches[i].balls||0, pitches[i].strikes||0, pitches[i].outs||0);
     renderPitchLog(shown, ab.event);
     i++;
-  }, 1500);
+  }, animSpeed);
 }
 
 function abNav(dir) {
@@ -1782,12 +1783,13 @@ async function refreshBoxScoreData(gameId) {
         _boxAbIndex = _boxAtBats.length - 1;
         _lastAnimatedAbIndex = -1;
         _lastAnimatedPitchCount = 0;
+        if (_abAnimTimer) { clearInterval(_abAnimTimer); _abAnimTimer = null; }
         renderSelectedAtBat();
-      } else if (wasAtEnd && !_abAnimTimer) {
-        // Same at-bat but maybe new pitches — only re-render if pitch count changed
+      } else if (wasAtEnd) {
+        // Same at-bat but maybe new pitches
         _boxAbIndex = _boxAtBats.length - 1;
         const currentPitches = (_boxAtBats[_boxAbIndex].pitch_sequence || []).length;
-        if (currentPitches !== _lastAnimatedPitchCount) {
+        if (currentPitches !== _lastAnimatedPitchCount && !_abAnimTimer) {
           renderSelectedAtBat();
         }
       } else {
