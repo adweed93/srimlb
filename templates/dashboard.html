@@ -426,6 +426,7 @@ async function loadTeam(id) {
   if (_teamRefreshTimer) { clearInterval(_teamRefreshTimer); _teamRefreshTimer = null; }
   if (_liveRefreshTimer) { clearInterval(_liveRefreshTimer); _liveRefreshTimer = null; }
   if (_boxRefreshTimer) { clearTimeout(_boxRefreshTimer); _boxRefreshTimer = null; }
+  if (_boxLiveTimer) { clearTimeout(_boxLiveTimer); _boxLiveTimer = null; }
   if (_boxAbortCtrl) { _boxAbortCtrl.abort(); _boxAbortCtrl = null; }
   navPush('team', id);
   switchTab('stats');
@@ -541,6 +542,7 @@ async function loadPlayer(id) {
   if (_liveRefreshTimer) { clearInterval(_liveRefreshTimer); _liveRefreshTimer = null; }
   if (_teamRefreshTimer) { clearInterval(_teamRefreshTimer); _teamRefreshTimer = null; }
   if (_boxRefreshTimer) { clearTimeout(_boxRefreshTimer); _boxRefreshTimer = null; }
+  if (_boxLiveTimer) { clearTimeout(_boxLiveTimer); _boxLiveTimer = null; }
   if (_boxAbortCtrl) { _boxAbortCtrl.abort(); _boxAbortCtrl = null; }
   navPush('player', id);
   switchTab('stats');
@@ -1240,6 +1242,7 @@ async function loadFieldAndZone(gameId) {
 
 // In-App Box Score
 let _boxRefreshTimer = null;
+let _boxLiveTimer = null;
 let _boxAbortCtrl = null;
 async function loadGamePreview(gameId) {
   window._viewingHistory = true;
@@ -1363,6 +1366,7 @@ async function loadGamePreview(gameId) {
 async function loadBoxScore(gameId) {
   window._viewingHistory = true;
   if (_boxRefreshTimer) { clearTimeout(_boxRefreshTimer); _boxRefreshTimer = null; }
+  if (_boxLiveTimer) { clearTimeout(_boxLiveTimer); _boxLiveTimer = null; }
   if (_boxAbortCtrl) { _boxAbortCtrl.abort(); _boxAbortCtrl = null; }
   if (_liveRefreshTimer) { clearInterval(_liveRefreshTimer); _liveRefreshTimer = null; }
   if (_teamRefreshTimer) { clearInterval(_teamRefreshTimer); _teamRefreshTimer = null; }
@@ -1374,7 +1378,13 @@ async function loadBoxScore(gameId) {
   // Only auto-refresh if game is live
   try {
     const lr = await fetch(`/api/game/${gameId}/live`).then(r=>r.json());
-    if (lr.available) { const scheduleBoxRefresh = () => { _boxRefreshTimer = setTimeout(async () => { if (!document.querySelector('#scores.active') || !window._viewingHistory) { _boxRefreshTimer = null; return; } await refreshBoxScoreData(gameId); scheduleBoxRefresh(); }, 6000); }; scheduleBoxRefresh(); }
+    if (lr.available) {
+      // Fast live update (diamond, count, pitches) every 3s
+      const scheduleLiveRefresh = () => { _boxLiveTimer = setTimeout(async () => { if (!document.querySelector('#scores.active') || !window._viewingHistory) { _boxLiveTimer = null; return; } try { const l = await fetch(`/api/game/${gameId}/live`).then(r=>r.json()); if (l.available) { renderLiveBatterCard(l); const isAtEnd = _boxAbIndex === _boxAtBats.length - 1; if (isAtEnd && !_abAnimTimer) { const svg = document.getElementById('ab-diamond-svg'); if (svg) { const on='var(--green)',off='#333'; svg.querySelector('#base-1').setAttribute('fill',l.runners.first?on:off); svg.querySelector('#base-2').setAttribute('fill',l.runners.second?on:off); svg.querySelector('#base-3').setAttribute('fill',l.runners.third?on:off); } if (l.count) { renderAbCount(l.count.balls||0,l.count.strikes||0,l.count.outs||0); if (l.count.balls===0&&l.count.strikes===0) { const zone=document.getElementById('ab-strike-zone'); if(zone&&zone.querySelector('circle')){zone.innerHTML=renderStrikeZone([],null);renderPitchLog([],null);} } } if (l.pitches&&l.pitches.length) { const zone=document.getElementById('ab-strike-zone'); if(zone) zone.innerHTML=renderStrikeZone(l.pitches,l.pitches[l.pitches.length-1]); renderPitchLog(l.pitches,null); } const matchupEl=document.getElementById('ab-matchup'); if(matchupEl) matchupEl.innerHTML=`<span style="font-weight:600;color:var(--text)">${l.batter||''}</span> <span style="color:var(--muted)">vs</span> <span style="color:var(--muted)">${l.pitcher||''}</span>`; } } } catch(e){} scheduleLiveRefresh(); }, 3000); };
+      scheduleLiveRefresh();
+      // Heavier boxscore + plays refresh every 8s
+      const scheduleBoxRefresh = () => { _boxRefreshTimer = setTimeout(async () => { if (!document.querySelector('#scores.active') || !window._viewingHistory) { _boxRefreshTimer = null; return; } await refreshBoxScoreData(gameId); scheduleBoxRefresh(); }, 8000); }; scheduleBoxRefresh();
+    }
   } catch(e) {}
 }
 
@@ -1747,38 +1757,11 @@ async function refreshBoxScoreData(gameId) {
   _boxAbortCtrl = new AbortController();
   const sig = _boxAbortCtrl.signal;
   try {
-    const [br, lr] = await Promise.all([
-      fetch(`/api/game/${gameId}/boxscore`, {signal:sig}).then(r=>r.json()),
-      fetch(`/api/game/${gameId}/live`, {signal:sig}).then(r=>r.json()).catch(()=>({available:false}))
-    ]);
+    const br = await fetch(`/api/game/${gameId}/boxscore`, {signal:sig}).then(r=>r.json());
     if (!br.available) return;
     // Update linescore
     const ls = document.getElementById('box-linescore');
     if (ls) ls.innerHTML = buildLinescoreTable(br);
-    // Update live batter card
-    renderLiveBatterCard(lr);
-    // Update diamond only if user is on the latest at-bat and no animation running
-    const dm = document.getElementById('box-diamond');
-    const isAtEnd = _boxAbIndex === _boxAtBats.length - 1;
-    if (dm && lr.available && isAtEnd && !_abAnimTimer) {
-      const on = 'var(--green)', off = '#333';
-      const svg = document.getElementById('ab-diamond-svg');
-      if (svg) {
-        svg.querySelector('#base-1').setAttribute('fill', lr.runners.first?on:off);
-        svg.querySelector('#base-2').setAttribute('fill', lr.runners.second?on:off);
-        svg.querySelector('#base-3').setAttribute('fill', lr.runners.third?on:off);
-      }
-      if (lr.count) {
-        renderAbCount(lr.count.balls||0, lr.count.strikes||0, lr.count.outs||0);
-        // New batter (0-0 count) — clear strike zone from previous AB
-        if (lr.count.balls === 0 && lr.count.strikes === 0) {
-          const zone = document.getElementById('ab-strike-zone');
-          if (zone && zone.querySelector('circle')) { zone.innerHTML = renderStrikeZone([], null); renderPitchLog([], null); }
-        }
-      }
-      const matchupEl = document.getElementById('ab-matchup');
-      if (matchupEl) matchupEl.innerHTML = `<span style="font-weight:600;color:var(--text)">${lr.batter||''}</span> <span style="color:var(--muted)">vs</span> <span style="color:var(--muted)">${lr.pitcher||''}</span>`;
-    }
     // Update tables
     const tb = document.getElementById('box-tables');
     if (tb) tb.innerHTML = buildBattingTable(br.away_batters, br.away_id, br.away_team) + buildBattingTable(br.home_batters, br.home_id, br.home_team) + buildPitchingTable(br.away_pitchers, br.away_id, br.away_team) + buildPitchingTable(br.home_pitchers, br.home_id, br.home_team);
