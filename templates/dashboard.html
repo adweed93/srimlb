@@ -1742,14 +1742,22 @@ function renderLiveBatterCard(lr) {
   const s = lr.batter_stats || {};
   const statLine = s.ab !== undefined ? `${s.h}-${s.ab}, ${s.r} R, ${s.rbi} RBI${s.hr?' | '+s.hr+' HR':''}${s.bb?' | '+s.bb+' BB':''}${s.k?' | '+s.k+' K':''}` : '';
   el.style.display = 'block';
-  el.innerHTML = `<div style="display:flex;align-items:center;gap:12px">
-    ${playerImg(lr.batter_id, 44)}
-    <div style="flex:1">
-      <div style="font-weight:700;font-size:14px;color:var(--text)" onclick="loadPlayer(${lr.batter_id})" class="clickable">${lr.batter}</div>
-      <div style="font-size:11px;color:var(--muted)">vs ${lr.pitcher} • ${lr.inning_half==='Top'?'▲':'▼'}${lr.inning}</div>
-      ${statLine ? `<div style="font-size:12px;color:var(--green);margin-top:2px">${statLine}</div>` : ''}
-    </div>
-  </div>`;
+  if (el.dataset.batterId !== String(lr.batter_id)) {
+    el.dataset.batterId = lr.batter_id;
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:12px">
+      ${playerImg(lr.batter_id, 44)}
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px;color:var(--text)" onclick="loadPlayer(${lr.batter_id})" class="clickable">${lr.batter}</div>
+        <div class="lb-meta" style="font-size:11px;color:var(--muted)">vs ${lr.pitcher} • ${lr.inning_half==='Top'?'▲':'▼'}${lr.inning}</div>
+        <div class="lb-stats" style="font-size:12px;color:var(--green);margin-top:2px">${statLine}</div>
+      </div>
+    </div>`;
+  } else {
+    const meta = el.querySelector('.lb-meta');
+    if (meta) meta.textContent = `vs ${lr.pitcher} • ${lr.inning_half==='Top'?'▲':'▼'}${lr.inning}`;
+    const stats = el.querySelector('.lb-stats');
+    if (stats) stats.textContent = statLine;
+  }
 }
 
 async function refreshBoxScoreData(gameId) {
