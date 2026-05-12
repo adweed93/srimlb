@@ -1713,15 +1713,17 @@ function buildLinescoreTable(d) {
   const h = 'padding:4px 6px;border:1px solid var(--border);text-align:center;font-size:10px;color:var(--muted);font-weight:600;min-width:22px';
   const t = 'padding:4px 6px;border:1px solid var(--border);text-align:left;font-size:11px;font-weight:600;white-space:nowrap';
   const rowH = 'height:26px';
+  const innings = [...lt.innings];
+  while (innings.length < 9) innings.push({num: innings.length + 1, away: '', home: ''});
   let tbl = '<table style="border-collapse:collapse;width:100%"><tr>';
   tbl += `<td style="${h};${rowH}">&nbsp;</td>`;
-  lt.innings.forEach(inn => { tbl += `<td style="${h};${rowH}">${inn.num}</td>`; });
+  innings.forEach(inn => { tbl += `<td style="${h};${rowH}">${inn.num}</td>`; });
   tbl += `<td style="${h};${rowH}">R</td><td style="${h};${rowH}">H</td><td style="${h};${rowH}">E</td></tr>`;
   tbl += `<tr><td style="${t};${rowH}">${teamLogo(d.away_id,20)}</td>`;
-  lt.innings.forEach(inn => { tbl += `<td style="${c};${rowH}">${inn.away!==''?inn.away:'-'}</td>`; });
+  innings.forEach(inn => { tbl += `<td style="${c};${rowH}">${inn.away!==''?inn.away:'-'}</td>`; });
   tbl += `<td style="${c};font-weight:700;${rowH}">${lt.away.r}</td><td style="${c};${rowH}">${lt.away.h}</td><td style="${c};${rowH}">${lt.away.e}</td></tr>`;
   tbl += `<tr><td style="${t};${rowH}">${teamLogo(d.home_id,20)}</td>`;
-  lt.innings.forEach(inn => { tbl += `<td style="${c};${rowH}">${inn.home!==''?inn.home:'-'}</td>`; });
+  innings.forEach(inn => { tbl += `<td style="${c};${rowH}">${inn.home!==''?inn.home:'-'}</td>`; });
   tbl += `<td style="${c};font-weight:700;${rowH}">${lt.home.r}</td><td style="${c};${rowH}">${lt.home.h}</td><td style="${c};${rowH}">${lt.home.e}</td></tr></table>`;
   return tbl;
 }
