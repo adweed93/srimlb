@@ -1714,7 +1714,7 @@ function buildLinescoreTable(d) {
   const t = 'padding:4px 6px;border:1px solid var(--border);text-align:left;font-size:11px;font-weight:600;white-space:nowrap';
   const rowH = 'height:26px';
   // Left: team names
-  let left = `<table style="border-collapse:collapse"><tr><td style="${h};${rowH}">&nbsp;</td></tr><tr><td style="${t};${rowH}">${d.away_team}</td></tr><tr><td style="${t};${rowH}">${d.home_team}</td></tr></table>`;
+  let left = `<table style="border-collapse:collapse"><tr><td style="${h};${rowH}">&nbsp;</td></tr><tr><td style="${t};${rowH}">${teamLogo(d.away_id,20)}</td></tr><tr><td style="${t};${rowH}">${teamLogo(d.home_id,20)}</td></tr></table>`;
   // Middle: innings (scrollable)
   let mid = '<table style="border-collapse:collapse"><tr>';
   lt.innings.forEach(inn => { mid += `<td style="${h};${rowH}">${inn.num}</td>`; });
