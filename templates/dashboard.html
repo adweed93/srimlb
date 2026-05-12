@@ -1538,7 +1538,7 @@ function renderSelectedAtBat() {
   if (counter) counter.textContent = `${_boxAbIndex+1} / ${_boxAtBats.length}`;
   const liveBtn = document.getElementById('ab-live-btn');
   if (liveBtn) {
-    const isLive = _boxAbIndex >= _boxAtBats.length - 1;
+    const isLive = _boxAbIndex >= _boxAtBats.length - 1 && _showingLiveCard;
     liveBtn.style.background = isLive ? 'var(--red)' : '#555';
     liveBtn.style.boxShadow = isLive ? '0 0 6px var(--red)' : 'none';
     liveBtn.style.cursor = isLive ? 'default' : 'pointer';
@@ -1676,7 +1676,16 @@ function abGoLive() {
   _lastUserNavTime = 0;
   _lastAnimatedAbIndex = _boxAbIndex;
   _lastAnimatedPitchCount = (_boxAtBats[_boxAbIndex].pitch_sequence || []).length;
-  renderSelectedAtBat();
+  // Update button states without re-rendering the card (live refresh handles it)
+  const liveBtn = document.getElementById('ab-live-btn');
+  if (liveBtn) { liveBtn.style.background = 'var(--red)'; liveBtn.style.boxShadow = '0 0 6px var(--red)'; liveBtn.style.cursor = 'default'; }
+  const prevBtn = document.getElementById('ab-prev-btn');
+  const nextBtn = document.getElementById('ab-next-btn');
+  if (prevBtn) prevBtn.style.visibility = 'visible';
+  if (nextBtn) nextBtn.style.visibility = 'hidden';
+  const counter = document.getElementById('ab-counter');
+  if (counter) counter.textContent = `${_boxAbIndex+1} / ${_boxAtBats.length}`;
+}
 }
 function abReplay() {
   _lastAnimatedAbIndex = -1;
