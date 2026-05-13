@@ -1445,7 +1445,7 @@ function renderStrikeZone(pitches, lastPitch, batSide) {
   const zoneH = zoneB - zoneT;
   const zoneW = zoneR - zoneL;
   const batterImg = '';
-  const batterHtml = batSide ? `<img src="/static/batter_${window._batterHome?'home':'away'}_${batSide==='L'?'left':'right'}.png" style="position:absolute;height:95%;bottom:0;${batSide==='L'?'left:5px':'right:5px'};opacity:0.6;filter:hue-rotate(${window._batterHue||0}deg) saturate(${window._batterSat||1});pointer-events:none"/>` : '';
+  const batterHtml = batSide ? `<img src="/static/batters/batter_${window._batterHome?'home':'away'}_${batSide==='L'?'left':'right'}_${window._batterTeamId||110}.png" style="position:absolute;height:95%;bottom:0;${batSide==='L'?'left:5px':'right:5px'};opacity:0.6;pointer-events:none"/>` : '';
   return `<div style="display:flex;flex-direction:column;align-items:center"><div style="position:relative;display:inline-block">
     ${batterHtml}
     <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="position:relative;z-index:1">
@@ -1624,13 +1624,11 @@ function renderSelectedAtBat() {
   const matchupEl = document.getElementById('ab-matchup');
   if (matchupEl) matchupEl.innerHTML = `<span style="font-weight:600;color:var(--text)">${ab.batter}</span> <span style="color:var(--muted)">vs</span> <span style="color:var(--muted)">${ab.pitcher}</span>`;
 
-  // Set jersey color for batter
+  // Set jersey for batter
   const batterTeamId = ab.half === 'top' ? window._boxAwayId : window._boxHomeId;
   const isHome = ab.half === 'bottom';
-  const team = _teamColors[batterTeamId] || {h:0,s:1,c:'#888'};
   window._batterHome = isHome;
-  window._batterHue = team.h;
-  window._batterSat = team.s;
+  window._batterTeamId = batterTeamId;
   // Pitch log on opposite side of batter (righty=right, lefty=left)
   window._pitchLogSide = ab.bat_side === 'L' ? 'left' : 'right';
 
