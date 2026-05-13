@@ -1654,12 +1654,8 @@ function abNav(dir) {
   if (_showingLiveCard && dir === -1) {
     _showingLiveCard = false;
     _lastUserNavTime = Date.now();
-    // If last completed AB is same batter as live card, go one further back
-    const lastAb = _boxAtBats[_boxAbIndex];
-    const liveEl = document.getElementById('box-live-batter');
-    if (lastAb && liveEl && liveEl.dataset.batterId === String(lastAb.batter_id) && _boxAbIndex > 0) {
-      _boxAbIndex--;
-    }
+    // Go to second-to-last AB since the last one was just shown as the live card
+    if (_boxAbIndex > 0) _boxAbIndex--;
     _lastAnimatedAbIndex = _boxAbIndex;
     _lastAnimatedPitchCount = (_boxAtBats[_boxAbIndex].pitch_sequence || []).length;
     renderSelectedAtBat();
