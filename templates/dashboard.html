@@ -1948,9 +1948,9 @@ async function renderBoxScore(gameId) {
   html += `<div class="player-card" style="padding:12px;position:relative">`;
   html += `<div id="ab-live-btn" onclick="abGoLive()" style="position:absolute;top:8px;left:12px;font-size:9px;font-weight:700;cursor:pointer;padding:3px 8px;border-radius:10px;background:var(--red);color:#fff;box-shadow:0 0 6px var(--red);transition:all .3s">● LIVE</div>`;
   html += `<div id="ab-matchup" style="text-align:center;font-size:11px;margin-bottom:8px;height:16px"><span style="font-weight:600;color:var(--text)"></span></div>`;
-  html += `<div style="display:flex;align-items:center;justify-content:center;gap:16px">`;
-  html += `<div id="box-diamond" style="width:100px;height:105px"></div>`;
+  html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px">`;
   html += `<div id="ab-strike-zone" style="width:260px;height:270px"></div>`;
+  html += `<div id="box-diamond" style="width:100px;height:80px"></div>`;
   html += `</div>`;
   html += `<div id="ab-pitch-log" style="height:80px;overflow-y:auto;padding:6px 12px;border-top:1px solid var(--border);margin-top:8px;font-family:'SF Mono','Fira Code',monospace;display:flex;flex-direction:column;align-items:center"></div>`;
   html += `<div id="ab-replay-btn" onclick="abReplay()" style="position:absolute;bottom:10px;left:12px;font-size:9px;font-weight:700;cursor:pointer;padding:3px 8px;border-radius:10px;background:#333;color:var(--text);border:1px solid var(--border)">▶ Replay</div>`;
