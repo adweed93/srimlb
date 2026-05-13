@@ -1782,7 +1782,11 @@ function highlightInningNav() {
     el.style.background = active ? 'var(--green)' : 'none';
     if (active) activeEl = el;
   });
-  if (activeEl) activeEl.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
+  if (activeEl) {
+    const navRect = nav.getBoundingClientRect();
+    const elRect = activeEl.getBoundingClientRect();
+    nav.scrollLeft += (elRect.left + elRect.width/2) - (navRect.left + navRect.width/2);
+  }
 }
 
 function jumpToInning(idx) {
