@@ -1570,6 +1570,7 @@ function renderSelectedAtBat() {
 
   // Setup diamond with BSO if present
   const prevAb = _boxAbIndex > 0 ? _boxAtBats[_boxAbIndex-1] : null;
+  const sameHalfInning = prevAb && prevAb.inning === ab.inning && prevAb.half === ab.half;
   if (dm) {
     dm.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
       <svg id="ab-diamond-svg" width="60" height="60" viewBox="0 0 100 100">
@@ -1581,7 +1582,7 @@ function renderSelectedAtBat() {
       <div id="ab-bso" style="display:flex;gap:6px;margin-top:4px;font-size:9px;color:var(--muted);white-space:nowrap"></div>
       <div id="ab-score" style="margin-top:4px;font-size:9px;color:var(--muted);white-space:nowrap">${ab.away_abbr||''} ${prevAb?prevAb.away_score??0:ab.away_score??0} - ${prevAb?prevAb.home_score??0:ab.home_score??0} ${ab.home_abbr||''}</div>
     </div>`;
-    if (prevAb && prevAb.runners) renderAbDiamond(prevAb.runners);
+    if (sameHalfInning && prevAb.runners) renderAbDiamond(prevAb.runners);
   }
   const matchupEl = document.getElementById('ab-matchup');
   if (matchupEl) matchupEl.innerHTML = `<span style="font-weight:600;color:var(--text)">${ab.batter}</span> <span style="color:var(--muted)">vs</span> <span style="color:var(--muted)">${ab.pitcher}</span>`;
