@@ -1461,7 +1461,7 @@ function renderPitchLog(pitches, abEvent) {
     return c==='C'?'Str':c==='B'?'Ball':c==='*B'?'Ball':c==='S'?'Swg':c==='W'?'Swg':c==='Q'?'Swg':c==='F'?'Foul':c==='T'?'Tip':c==='L'?'Foul':c==='R'?'Foul':c==='X'||c==='D'||c==='E'?'Play':c==='H'?'HBP':c==='M'?'Bunt':c==='O'?'Foul':c==='P'?'Pitchout':c==='V'?'Auto Ball':'?';
   }
   let html = '<div style="width:fit-content;margin:0 auto">';
-  const pitchName = {FF:'4-Seam',SI:'Sinker',FC:'Cutter',SL:'Slider',CU:'Curve',CH:'Changeup',FS:'Splitter',KC:'Knuckle Curve',ST:'Sweeper',SV:'Slurve',KN:'Knuckle',EP:'Eephus',SC:'Screwball',CS:'Slow Curve',FA:'Fastball',FT:'2-Seam'};
+  const pitchName = {FF:'4-Seam',SI:'Sinker',FC:'Cutter',SL:'Slider',CU:'Curve',CH:'Change',FS:'Split',KC:'Knk Crv',ST:'Sweep',SV:'Slurve',KN:'Knuck',EP:'Eephus',SC:'Screw',CS:'Sl Crv',FA:'Fastbl',FT:'2-Seam'};
   html += pitches.map((p, i) => {
     const color = pitchColor(p.call, p, i);
     const label = pitchLabel(p.call, i === pitches.length - 1);
