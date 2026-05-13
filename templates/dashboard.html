@@ -1442,8 +1442,10 @@ function renderStrikeZone(pitches, lastPitch, batSide) {
   });
   // Batter silhouette (catcher's view: R=left side, L=right side)
   const isLeft = batSide === 'L';
-  const bx = isLeft ? zoneR + 4 : zoneL - 28;
-  const batterSvg = batSide ? `<g opacity="0.18" transform="translate(${bx},${zoneT - 10})${isLeft ? ' scale(-1,1) translate(-24,0)' : ''}"><path d="M12,0 A5,5.5 0 1,1 12,11 A5,5.5 0 1,1 12,0 M10,12 C8,14 6,18 5,22 C4,26 4,30 5,34 C6,38 7,42 6,46 C5,50 4,54 3,58 L7,58 C8,54 9,50 10,46 C11,42 12,38 12,34 C12,38 13,42 14,46 C15,50 16,54 17,58 L21,58 C20,54 19,50 18,46 C17,42 16,38 15,34 C14,30 14,26 14,22 C14,18 13,14 12,12 M6,18 C4,17 2,16 1,14 M14,18 C14,16 15,14 16,12 L18,8 L22,2 L24,0" fill="#fff" stroke="none"/></g>` : '';
+  const bx = isLeft ? zoneR + 2 : zoneL - 30;
+  // MLB-style batter silhouette in batting stance
+  const batterPath = 'M13,1 C15,1 17,3 17,5.5 C17,8 15,10 13,10 C11,10 9,8 9,5.5 C9,3 11,1 13,1 Z M10,11 C8,12 7,14 7,16 L6,22 L4,20 L2,18 L1,19 L4,23 L6,25 L6,30 L5,38 L4,46 L3,54 L3,60 L7,60 L8,54 L9,46 L11,38 L12,34 L13,38 L14,46 L15,54 L16,60 L20,60 L19,54 L18,46 L17,38 L16,30 L16,25 L16,16 C16,14 15,12 13,11 Z M16,14 L18,12 L20,9 L23,5 L25,3 L26,4 L24,7 L21,11 L18,14 Z';
+  const batterSvg = batSide ? `<g opacity="0.15" transform="translate(${bx},${zoneT - 12})${isLeft ? ' scale(-1,1) translate(-26,0)' : ''}"><path d="${batterPath}" fill="#fff" stroke="none"/></g>` : '';
   return `<div style="display:flex;flex-direction:column;align-items:center">
     <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
       ${batterSvg}
