@@ -291,7 +291,7 @@ def live_games():
             except Exception:
                 entry["balls"] = entry["strikes"] = entry["outs"] = 0
             result["live"].append(entry)
-        elif g["status"] == "Final":
+        elif g["status"] in ("Final", "Game Over", "Completed Early"):
             entry["innings"] = g.get("current_inning", 9)
             result["final"].append(entry)
         else:
@@ -1446,7 +1446,7 @@ def games_history():
         try:
             games = statsapi.schedule(date=date)
             for g in games:
-                if g["status"] == "Final":
+                if g["status"] in ("Final", "Game Over", "Completed Early"):
                     all_games.append({
                         "game_id": g.get("game_id"),
                         "date": g["game_date"],
