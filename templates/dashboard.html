@@ -1417,9 +1417,18 @@ function renderDiamond(runners, count) {
 
 function renderStrikeZone(pitches, lastPitch) {
   const w = 130, h = 150, pad = 20;
-  const zoneL = pad, zoneR = w - pad, zoneT = pad, zoneB = h - pad;
-  function mapX(px) { return pad + ((px + 1.5) / 3.0) * (w - 2*pad); }
-  function mapY(pz) { return pad + ((3.8 - pz) / 2.6) * (h - 2*pad); }
+  // Strike zone boundaries in feet (plate is 17" = 1.417ft wide, zone ~1.5-3.5 height)
+  const zoneXMin = -0.83, zoneXMax = 0.83;
+  const zoneYMin = 1.5, zoneYMax = 3.5;
+  // Map full view to slightly wider than zone so edge pitches are visible
+  const viewXMin = -1.5, viewXMax = 1.5;
+  const viewYMin = 1.0, viewYMax = 4.0;
+  const zoneL = pad + ((zoneXMin - viewXMin) / (viewXMax - viewXMin)) * (w - 2*pad);
+  const zoneR = pad + ((zoneXMax - viewXMin) / (viewXMax - viewXMin)) * (w - 2*pad);
+  const zoneT = pad + ((viewYMax - zoneYMax) / (viewYMax - viewYMin)) * (h - 2*pad);
+  const zoneB = pad + ((viewYMax - zoneYMin) / (viewYMax - viewYMin)) * (h - 2*pad);
+  function mapX(px) { return pad + ((px - viewXMin) / (viewXMax - viewXMin)) * (w - 2*pad); }
+  function mapY(pz) { return pad + ((viewYMax - pz) / (viewYMax - viewYMin)) * (h - 2*pad); }
   let dots = '';
   (pitches||[]).forEach((p, i) => {
     if (p.x === 0 && p.y === 0) return;
