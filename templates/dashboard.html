@@ -1466,7 +1466,7 @@ function renderPitchLog(pitches, abEvent) {
     const color = pitchColor(p.call, p, i);
     const label = pitchLabel(p.call, i === pitches.length - 1);
     const pn = pitchName[p.type] || p.type || '--';
-    return `<div style="display:grid;grid-template-columns:12px 58px 34px 1fr;gap:4px;font-size:10px;line-height:16px;${i===pitches.length-1?'font-weight:700':''}"><span style="color:${color}">${i+1}</span><span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pn}</span><span style="color:var(--muted);text-align:right">${p.speed?Math.round(p.speed):''}</span><span style="color:${color};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span></div>`;
+    return `<div style="display:grid;grid-template-columns:12px 58px 34px 1fr;gap:4px;font-size:10px;line-height:16px;${i===pitches.length-1?'font-weight:700':''}"><span style="color:${color}">${i+1}</span><span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pn}</span><span style="color:var(--muted);text-align:right">${p.speed?Number(p.speed).toFixed(1):''}</span><span style="color:${color};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span></div>`;
   }).join('');
   html += '</div>';
   el.innerHTML = html;
