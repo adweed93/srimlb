@@ -1755,19 +1755,17 @@ function abReplay() {
 function buildInningNav() {
   const nav = document.getElementById('ab-inning-nav');
   if (!nav || !_boxAtBats.length) return;
-  const tops = [], bots = [];
+  const innings = [];
   _boxAtBats.forEach((ab, i) => {
-    const arr = ab.half==='top' ? tops : bots;
-    if (!arr.length || arr[arr.length-1].inning !== ab.inning) {
-      arr.push({inning: ab.inning, idx: i});
+    const key = ab.half + ab.inning;
+    if (!innings.length || innings[innings.length-1].key !== key) {
+      innings.push({key, half: ab.half, inning: ab.inning, idx: i});
     }
   });
-  const cols = Math.max(tops.length, bots.length);
-  let html = `<div style="display:grid;grid-template-columns:repeat(${cols},20px);gap:0;text-align:center">`;
-  tops.forEach(inn => { html += `<span data-inn="top${inn.inning}" onclick="jumpToInning(${inn.idx})" style="cursor:pointer;color:var(--muted);font-size:9px">▲${inn.inning}</span>`; });
-  for (let i = tops.length; i < cols; i++) html += '<span></span>';
-  bots.forEach(inn => { html += `<span data-inn="bot${inn.inning}" onclick="jumpToInning(${inn.idx})" style="cursor:pointer;color:var(--muted);font-size:9px">▼${inn.inning}</span>`; });
-  html += '</div>';
+  let html = '';
+  innings.forEach(inn => {
+    html += `<span data-inn="${inn.key}" onclick="jumpToInning(${inn.idx})" style="cursor:pointer;color:var(--muted);font-size:11px;padding:4px 8px;white-space:nowrap;flex-shrink:0;border-radius:12px">${inn.half==='top'?'▲':'▼'}${inn.inning}</span>`;
+  });
   nav.innerHTML = html;
 }
 
@@ -1775,9 +1773,13 @@ function highlightInningNav() {
   const nav = document.getElementById('ab-inning-nav');
   if (!nav || !_boxAtBats.length) return;
   const ab = _boxAtBats[_boxAbIndex];
-  const key = (ab.half==='top'?'top':'bot') + ab.inning;
+  const key = ab.half + ab.inning;
   nav.querySelectorAll('span[data-inn]').forEach(el => {
-    el.style.color = el.dataset.inn === key ? 'var(--green)' : 'var(--muted)';
+    const active = el.dataset.inn === key;
+    el.style.color = active ? 'var(--green)' : 'var(--muted)';
+    el.style.fontWeight = active ? '700' : '400';
+    el.style.background = active ? 'rgba(0,255,135,0.1)' : 'none';
+    if (active) el.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
     el.style.fontWeight = el.dataset.inn === key ? '700' : '400';
   });
 }
@@ -1808,7 +1810,7 @@ async function loadAtBatScroller(gameId) {
       <button id="ab-next-btn" onclick="abNav(1)" style="background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer">▶</button>
     </div>
     <div id="ab-counter" style="text-align:center;font-size:10px;color:var(--muted);margin-top:6px"></div>
-    <div id="ab-inning-nav" style="display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:6px"></div>`;
+    <div id="ab-inning-nav" style="display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:2px;margin-top:8px;padding:4px 0;justify-content:center"></div>`;
     buildInningNav();
     renderSelectedAtBat();
   } catch(e) { el.innerHTML = ''; }
