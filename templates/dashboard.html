@@ -1654,6 +1654,12 @@ function abNav(dir) {
   if (_showingLiveCard && dir === -1) {
     _showingLiveCard = false;
     _lastUserNavTime = Date.now();
+    // If last completed AB is same batter as live card, go one further back
+    const lastAb = _boxAtBats[_boxAbIndex];
+    const liveEl = document.getElementById('box-live-batter');
+    if (lastAb && liveEl && liveEl.dataset.batterId === String(lastAb.batter_id) && _boxAbIndex > 0) {
+      _boxAbIndex--;
+    }
     _lastAnimatedAbIndex = _boxAbIndex;
     _lastAnimatedPitchCount = (_boxAtBats[_boxAbIndex].pitch_sequence || []).length;
     renderSelectedAtBat();
@@ -1853,17 +1859,12 @@ async function refreshBoxScoreData(gameId) {
       const prevLen = _boxAtBats.length;
       _boxAtBats = pr.plays;
       if (wasAtEnd && pr.plays.length > prevLen) {
-        // New at-bat appeared — clear visuals immediately, then animate
+        // New at-bat appeared — stay on live view
         _boxAbIndex = _boxAtBats.length - 1;
-        _lastAnimatedAbIndex = -1;
-        _lastAnimatedPitchCount = 0;
+        _showingLiveCard = true;
+        _lastAnimatedAbIndex = _boxAbIndex;
+        _lastAnimatedPitchCount = (_boxAtBats[_boxAbIndex].pitch_sequence || []).length;
         if (_abAnimTimer) { clearInterval(_abAnimTimer); _abAnimTimer = null; }
-        const zone = document.getElementById('ab-strike-zone');
-        if (zone) zone.innerHTML = renderStrikeZone([], null);
-        renderAbCount(0, 0, 0);
-        renderPitchLog([], null);
-        const svg = document.getElementById('ab-diamond-svg');
-        if (svg) { svg.querySelector('#base-1').setAttribute('fill','#333'); svg.querySelector('#base-2').setAttribute('fill','#333'); svg.querySelector('#base-3').setAttribute('fill','#333'); }
         renderSelectedAtBat();
       } else if (wasAtEnd) {
         // Same at-bat but maybe new pitches
