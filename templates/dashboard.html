@@ -1497,15 +1497,38 @@ let _lastAnimatedPitchCount = 0;
 let _lastUserNavTime = 0;
 let _liveBatterId = null;
 // Team jersey hue-rotate (degrees from red) and saturation [home, away]
+// Home = team primary color jersey, Away = gray/muted
 const _teamJersey = {
-  108:[{h:0,s:1},{h:0,s:0.3}],109:[{h:345,s:1.2},{h:0,s:0.3}],110:[{h:20,s:1.5},{h:0,s:0.3}],111:[{h:0,s:1.2},{h:0,s:0.3}],
-  112:[{h:200,s:1.2},{h:0,s:0.3}],113:[{h:0,s:1},{h:0,s:0.3}],114:[{h:220,s:1},{h:0,s:0.3}],115:[{h:330,s:0.8},{h:0,s:0.3}],
-  116:[{h:240,s:1},{h:0,s:0.3}],117:[{h:200,s:1.5},{h:0,s:0.3}],118:[{h:200,s:1},{h:0,s:0.3}],119:[{h:20,s:1.2},{h:0,s:0.3}],
-  120:[{h:0,s:0},{h:0,s:0.3}],121:[{h:120,s:1},{h:0,s:0.3}],133:[{h:200,s:1.2},{h:0,s:0.3}],134:[{h:200,s:1},{h:0,s:0.3}],
-  135:[{h:200,s:1.5},{h:0,s:0.3}],136:[{h:200,s:1.2},{h:0,s:0.3}],137:[{h:20,s:1.5},{h:0,s:0.3}],138:[{h:0,s:1},{h:0,s:0.3}],
-  139:[{h:200,s:1.2},{h:0,s:0.3}],140:[{h:200,s:1},{h:0,s:0.3}],141:[{h:200,s:1.5},{h:0,s:0.3}],142:[{h:200,s:1},{h:0,s:0.3}],
-  143:[{h:0,s:1},{h:0,s:0.3}],144:[{h:0,s:1.2},{h:0,s:0.3}],145:[{h:0,s:0},{h:0,s:0.3}],146:[{h:200,s:1},{h:0,s:0.3}],
-  147:[{h:220,s:1.2},{h:0,s:0.3}],158:[{h:200,s:1.2},{h:0,s:0.3}]
+  109:[{h:0,s:1.2},{h:0,s:0.2}],     // ARI Diamondbacks - red
+  144:[{h:220,s:1.2},{h:220,s:0.3}],  // ATL Braves - navy
+  110:[{h:20,s:1.5},{h:20,s:0.3}],    // BAL Orioles - orange
+  111:[{h:0,s:1.2},{h:0,s:0.2}],      // BOS Red Sox - red
+  112:[{h:210,s:1.2},{h:210,s:0.3}],  // CHC Cubs - blue
+  145:[{h:0,s:0},{h:0,s:0}],          // CWS White Sox - black
+  113:[{h:0,s:1.2},{h:0,s:0.2}],      // CIN Reds - red
+  114:[{h:0,s:1.2},{h:0,s:0.2}],      // CLE Guardians - red
+  115:[{h:260,s:0.8},{h:260,s:0.3}],  // COL Rockies - purple
+  116:[{h:220,s:1.2},{h:220,s:0.3}],  // DET Tigers - navy
+  117:[{h:25,s:1.5},{h:25,s:0.3}],    // HOU Astros - orange
+  118:[{h:210,s:1.2},{h:210,s:0.3}],  // KC Royals - blue
+  108:[{h:0,s:1.2},{h:0,s:0.2}],      // LAA Angels - red
+  119:[{h:200,s:1.2},{h:200,s:0.3}],  // LAD Dodgers - blue
+  146:[{h:200,s:1.5},{h:200,s:0.3}],  // MIA Marlins - blue
+  158:[{h:220,s:1},{h:220,s:0.3}],    // MIL Brewers - navy/gold
+  142:[{h:220,s:1.2},{h:220,s:0.3}],  // MIN Twins - navy
+  121:[{h:20,s:1.5},{h:20,s:0.3}],    // NYM Mets - orange
+  147:[{h:220,s:1.2},{h:220,s:0.3}],  // NYY Yankees - navy
+  133:[{h:160,s:1},{h:160,s:0.3}],    // OAK Athletics - green
+  143:[{h:0,s:1.2},{h:0,s:0.2}],      // PHI Phillies - red
+  134:[{h:40,s:1.2},{h:40,s:0.3}],    // PIT Pirates - gold
+  135:[{h:25,s:0.8},{h:25,s:0.3}],    // SD Padres - brown
+  137:[{h:20,s:1.5},{h:20,s:0.3}],    // SF Giants - orange
+  136:[{h:180,s:1},{h:180,s:0.3}],    // SEA Mariners - teal
+  138:[{h:350,s:1.2},{h:350,s:0.2}],  // STL Cardinals - red
+  139:[{h:200,s:0.8},{h:200,s:0.3}],  // TB Rays - light blue
+  140:[{h:210,s:1.2},{h:210,s:0.3}],  // TEX Rangers - blue
+  141:[{h:210,s:1.2},{h:210,s:0.3}],  // TOR Blue Jays - blue
+  120:[{h:0,s:1.2},{h:0,s:0.2}],      // WSH Nationals - red
 };
 
 function abEventColor(ev) {
