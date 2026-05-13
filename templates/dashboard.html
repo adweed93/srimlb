@@ -1455,8 +1455,9 @@ function renderPitchLog(pitches, abEvent) {
     if (c==='H') return '#ff9800';
     return c==='B'||c==='*B'?'#4caf50':c==='X'||c==='D'||c==='E'?'#2196f3':'#f44336'; 
   }
+  const _shortEvent = {'Grounded Into DP':'GIDP','Fielders Choice Out':'FC Out','Fielders Choice':'FC','Catcher Interference':'Catch Int','Fan Interference':'Fan Int','Sac Fly Double Play':'Sac Fly DP','Strikeout Double Play':'K DP','Sacrifice Bunt':'Sac Bunt','Sacrifice Fly':'Sac Fly','Bunt Groundout':'Bunt','Hit By Pitch':'HBP','Intent Walk':'IBB','Bunt Pop Out':'Bunt','Bunt Lineout':'Bunt'};
   function pitchLabel(c, isLast) {
-    if ((c==='X'||c==='D'||c==='E'||c==='H') && isLast && abEvent) return abEvent;
+    if ((c==='X'||c==='D'||c==='E'||c==='H') && isLast && abEvent) return _shortEvent[abEvent]||abEvent;
     return c==='C'?'Str':c==='B'?'Ball':c==='*B'?'Ball':c==='S'?'Swg':c==='W'?'Swg':c==='Q'?'Swg':c==='F'?'Foul':c==='T'?'Tip':c==='L'?'Foul':c==='R'?'Foul':c==='X'||c==='D'||c==='E'?'Play':c==='H'?'HBP':c==='M'?'Bunt':c==='O'?'Foul':c==='P'?'Pitchout':c==='V'?'Auto Ball':'?';
   }
   let html = '<div style="width:fit-content;margin:0 auto">';
