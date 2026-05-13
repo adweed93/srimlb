@@ -1455,7 +1455,7 @@ function renderStrikeZone(pitches, lastPitch, batSide) {
       <line x1="${zoneL+2*(zoneR-zoneL)/3}" y1="${zoneT}" x2="${zoneL+2*(zoneR-zoneL)/3}" y2="${zoneB}" stroke="#333" stroke-width="0.5"/>
       <line x1="${zoneL}" y1="${zoneT+(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
       <line x1="${zoneL}" y1="${zoneT+2*(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+2*(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
-      <polygon points="${zoneL},${h-22} ${zoneR},${h-22} ${zoneR},${h-16} ${(zoneL+zoneR)/2},${h-10} ${zoneL},${h-16}" fill="#fff" stroke="none"/>
+      <polygon points="${zoneL},${h-10-(zoneR-zoneL)/2} ${zoneR},${h-10-(zoneR-zoneL)/2} ${zoneR},${h-10-(zoneR-zoneL)/4} ${(zoneL+zoneR)/2},${h-10} ${zoneL},${h-10-(zoneR-zoneL)/4}" fill="#fff" stroke="none"/>
       ${dots}
     </svg>
     </div>
