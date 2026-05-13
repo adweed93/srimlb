@@ -1444,11 +1444,11 @@ function renderStrikeZone(pitches, lastPitch, batSide) {
   const isLeft = batSide === 'L';
   const zoneH = zoneB - zoneT;
   const zoneW = zoneR - zoneL;
-  const batH = h * 0.9;
-  const batW = batH * 0.7;
-  const batterImg = batSide ? `<image href="/static/batter_${isLeft?'left':'right'}.png" x="${isLeft ? zoneR - batW*0.15 : zoneL - batW*0.85}" y="${h - batH - 2}" width="${batW}" height="${batH}" opacity="0.4" style="filter:hue-rotate(${window._batterHue||0}deg) saturate(${window._batterSat||1})"/>` : '';
-  return `<div style="display:flex;flex-direction:column;align-items:center">
-    <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  const batterImg = '';
+  const batterHtml = batSide ? `<img src="/static/batter_${batSide==='L'?'left':'right'}.png" style="position:absolute;height:95%;bottom:0;${batSide==='L'?'right:5px':'left:5px'};opacity:0.4;filter:hue-rotate(${window._batterHue||0}deg) saturate(${window._batterSat||1});pointer-events:none"/>` : '';
+  return `<div style="display:flex;flex-direction:column;align-items:center"><div style="position:relative;display:inline-block">
+    ${batterHtml}
+    <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="position:relative;z-index:1">
       ${batterImg}
       <rect x="${zoneL}" y="${zoneT}" width="${zoneR-zoneL}" height="${zoneB-zoneT}" fill="none" stroke="#555" stroke-width="1.5"/>
       <line x1="${zoneL+(zoneR-zoneL)/3}" y1="${zoneT}" x2="${zoneL+(zoneR-zoneL)/3}" y2="${zoneB}" stroke="#333" stroke-width="0.5"/>
@@ -1457,6 +1457,7 @@ function renderStrikeZone(pitches, lastPitch, batSide) {
       <line x1="${zoneL}" y1="${zoneT+2*(zoneB-zoneT)/3}" x2="${zoneR}" y2="${zoneT+2*(zoneB-zoneT)/3}" stroke="#333" stroke-width="0.5"/>
       ${dots}
     </svg>
+    </div>
     <div style="display:flex;gap:6px;font-size:8px;color:var(--muted);margin-top:2px">
       <span><span style="color:#f44336">●</span>Strike</span>
       <span><span style="color:#4caf50">●</span>Ball</span>
