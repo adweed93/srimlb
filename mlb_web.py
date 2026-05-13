@@ -1824,6 +1824,9 @@ def game_live_feed(game_id):
     try:
         import requests as req
         feed = req.get(f"https://statsapi.mlb.com/api/v1.1/game/{game_id}/feed/live").json()
+        game_status = feed.get("gameData", {}).get("status", {}).get("abstractGameState", "")
+        if game_status == "Final":
+            return jsonify({"available": False})
         linescore = feed.get("liveData", {}).get("linescore", {})
         plays = feed.get("liveData", {}).get("plays", {})
 
