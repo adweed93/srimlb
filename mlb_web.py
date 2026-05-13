@@ -1898,12 +1898,15 @@ def game_live_feed(game_id):
             if ev.get("isPitch"):
                 pd = ev.get("pitchData", {})
                 c = pd.get("coordinates", {})
+                ct = ev.get("count", {})
                 pitches.append({
                     "x": c.get("pX", 0),
                     "y": c.get("pZ", 0),
                     "call": ev.get("details", {}).get("call", {}).get("code", ""),
                     "type": ev.get("details", {}).get("type", {}).get("code", ""),
                     "speed": pd.get("startSpeed", 0),
+                    "strikes": ct.get("strikes", 0),
+                    "balls": ct.get("balls", 0),
                 })
 
         # Inning info
