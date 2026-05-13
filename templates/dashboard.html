@@ -1416,7 +1416,7 @@ function renderDiamond(runners, count) {
 }
 
 function renderStrikeZone(pitches, lastPitch, batSide) {
-  const w = 140, h = 150, pad = 15;
+  const w = 200, h = 200, pad = 40;
   // Strike zone: 17" plate = -0.708 to 0.708 ft, typical height 1.6-3.4 ft
   const zoneXMin = -0.708, zoneXMax = 0.708;
   const zoneYMin = 1.6, zoneYMax = 3.4;
@@ -1442,7 +1442,10 @@ function renderStrikeZone(pitches, lastPitch, batSide) {
   });
   // Batter image with team-colored jersey (hue-rotate from red base)
   const isLeft = batSide === 'L';
-  const batterImg = batSide ? `<image href="/static/batter_${isLeft?'left':'right'}.png" x="${isLeft ? zoneR - 10 : zoneL - 70}" y="${zoneT - 35}" width="90" height="${(zoneB-zoneT)+60}" opacity="0.5" style="filter:hue-rotate(${window._batterHue||0}deg) saturate(${window._batterSat||1})"/>` : '';
+  const zoneH = zoneB - zoneT;
+  const batH = zoneH * 2.5;
+  const batW = batH * 0.55;
+  const batterImg = batSide ? `<image href="/static/batter_${isLeft?'left':'right'}.png" x="${isLeft ? zoneR - 15 : zoneL - batW + 15}" y="${zoneB - batH + 5}" width="${batW}" height="${batH}" opacity="0.45" style="filter:hue-rotate(${window._batterHue||0}deg) saturate(${window._batterSat||1})"/>` : '';
   return `<div style="display:flex;flex-direction:column;align-items:center">
     <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
       ${batterImg}
