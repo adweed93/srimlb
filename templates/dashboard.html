@@ -1466,7 +1466,7 @@ function renderPitchLog(pitches, abEvent) {
     const color = pitchColor(p.call, p, i);
     const label = pitchLabel(p.call, i === pitches.length - 1);
     const pn = pitchName[p.type] || p.type || '--';
-    return `<div style="display:grid;grid-template-columns:14px 62px 38px 62px;gap:2px;font-size:10px;line-height:16px;font-family:monospace;${i===pitches.length-1?'font-weight:700':''}"><span style="color:${color}">${String(i+1).padStart(2)}</span><span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pn}</span><span style="color:var(--muted);text-align:center">${p.speed?Number(p.speed).toFixed(1):''}</span><span style="color:${color};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span></div>`;
+    return `<div style="display:grid;grid-template-columns:14px 50px 38px 56px;gap:0;font-size:10px;line-height:16px;font-family:monospace;${i===pitches.length-1?'font-weight:700':''}"><span style="color:${color}">${String(i+1).padStart(2)}</span><span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pn}</span><span style="color:var(--muted);text-align:center">${p.speed?Number(p.speed).toFixed(1):''}</span><span style="color:${color};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span></div>`;
   }).join('');
   html += '</div>';
   el.innerHTML = html;
