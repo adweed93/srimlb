@@ -1383,7 +1383,7 @@ async function loadBoxScore(gameId) {
     if (lr.available) {
       _showingLiveCard = true;
       // Fast live update (diamond, count, pitches) every 3s
-      const scheduleLiveRefresh = () => { _boxLiveTimer = setTimeout(async () => { if (!document.querySelector('#scores.active') || !window._viewingHistory) { _boxLiveTimer = null; return; } try { const l = await fetch(`/api/game/${gameId}/live`).then(r=>r.json()); if (l.available) { if (_showingLiveCard) renderLiveBatterCard(l); const isAtEnd = _boxAbIndex === _boxAtBats.length - 1; if (isAtEnd && !_abAnimTimer && (_showingLiveCard || Date.now() - _lastUserNavTime > 2000)) { const hasPitches = l.pitches && l.pitches.length > 0; if (hasPitches) { const svg = document.getElementById('ab-diamond-svg'); if (svg) { const on='var(--green)',off='#333'; svg.querySelector('#base-1').setAttribute('fill',l.runners.first?on:off); svg.querySelector('#base-2').setAttribute('fill',l.runners.second?on:off); svg.querySelector('#base-3').setAttribute('fill',l.runners.third?on:off); } if (l.count) renderAbCount(l.count.balls||0,l.count.strikes||0,l.count.outs||0); const zone=document.getElementById('ab-strike-zone'); if(zone) zone.innerHTML=renderStrikeZone(l.pitches,l.pitches[l.pitches.length-1],l.bat_side); renderPitchLog(l.pitches,null); const matchupEl=document.getElementById('ab-matchup'); if(matchupEl) matchupEl.innerHTML=`<span style="font-weight:600;color:var(--text)">${l.batter||''}</span> <span style="color:var(--muted)">vs</span> <span style="color:var(--muted)">${l.pitcher||''}</span>`; const card=document.getElementById('ab-card-display'); if(card && _showingLiveCard) { _showingLiveCard = true; const dots=l.pitches.map((p,i)=>{const c=(p.call==='F'||p.call==='T'||p.call==='O')&&p.strikes>=2&&i>0&&l.pitches[i-1].strikes>=2?'#ffeb3b':p.call==='H'?'#ff9800':p.call==='B'||p.call==='*B'?'#4caf50':p.call==='X'||p.call==='D'||p.call==='E'?'#2196f3':'#f44336';return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c}"></span>`;}).join(''); card.innerHTML=`<div style="padding:12px;border:1px solid var(--border);border-radius:10px"><div style="font-size:10px;color:var(--muted);margin-bottom:4px">${l.inning_half==='Top'?'▲':'▼'} ${l.inning}</div><div style="font-size:13px;font-weight:600;cursor:pointer" onclick="loadPlayer(${l.batter_id})">${l.batter}</div><div style="font-size:10px;color:var(--muted);margin:2px 0">vs ${l.pitcher}</div><div style="display:flex;gap:3px;margin-top:6px;align-items:center">${dots}<span style="font-size:9px;color:var(--muted);margin-left:4px">${l.pitches.length}P</span></div></div>`; } } else if (_showingLiveCard) { renderSelectedAtBat(); } } } } catch(e){} scheduleLiveRefresh(); }, 3000); };
+      const scheduleLiveRefresh = () => { _boxLiveTimer = setTimeout(async () => { if (!document.querySelector('#scores.active') || !window._viewingHistory) { _boxLiveTimer = null; return; } try { const l = await fetch(`/api/game/${gameId}/live`).then(r=>r.json()); if (l.available) { if (_showingLiveCard) renderLiveBatterCard(l); const isAtEnd = _boxAbIndex === _boxAtBats.length - 1; if (isAtEnd && !_abAnimTimer && (_showingLiveCard || Date.now() - _lastUserNavTime > 2000)) { const hasPitches = l.pitches && l.pitches.length > 0; if (hasPitches) { const svg = document.getElementById('ab-card-diamond'); if (svg) { const on='var(--green)',off='#333'; const b1=document.getElementById('card-base-1'),b2=document.getElementById('card-base-2'),b3=document.getElementById('card-base-3'); if(b1)b1.setAttribute('fill',l.runners.first?on:off); if(b2)b2.setAttribute('fill',l.runners.second?on:off); if(b3)b3.setAttribute('fill',l.runners.third?on:off); } if (l.count) renderAbCount(l.count.balls||0,l.count.strikes||0,l.count.outs||0); const zone=document.getElementById('ab-strike-zone'); if(zone) zone.innerHTML=renderStrikeZone(l.pitches,l.pitches[l.pitches.length-1],l.bat_side); renderPitchLog(l.pitches,null); const matchupEl=document.getElementById('ab-matchup'); if(matchupEl) matchupEl.innerHTML=`<span style="font-weight:600;color:var(--text)">${l.batter||''}</span> <span style="color:var(--muted)">vs</span> <span style="color:var(--muted)">${l.pitcher||''}</span>`; const card=document.getElementById('ab-card-display'); if(card && _showingLiveCard) { _showingLiveCard = true; const dots=l.pitches.map((p,i)=>{const c=(p.call==='F'||p.call==='T'||p.call==='O')&&p.strikes>=2&&i>0&&l.pitches[i-1].strikes>=2?'#ffeb3b':p.call==='H'?'#ff9800':p.call==='B'||p.call==='*B'?'#4caf50':p.call==='X'||p.call==='D'||p.call==='E'?'#2196f3':'#f44336';return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c}"></span>`;}).join(''); card.innerHTML=`<div style="padding:12px;border:1px solid var(--border);border-radius:10px"><div style="font-size:10px;color:var(--muted);margin-bottom:4px">${l.inning_half==='Top'?'▲':'▼'} ${l.inning}</div><div style="font-size:13px;font-weight:600;cursor:pointer" onclick="loadPlayer(${l.batter_id})">${l.batter}</div><div style="font-size:10px;color:var(--muted);margin:2px 0">vs ${l.pitcher}</div><div style="display:flex;gap:3px;margin-top:6px;align-items:center">${dots}<span style="font-size:9px;color:var(--muted);margin-left:4px">${l.pitches.length}P</span></div></div>`; } } else if (_showingLiveCard) { renderSelectedAtBat(); } } } } catch(e){} scheduleLiveRefresh(); }, 3000); };
       scheduleLiveRefresh();
       // Heavier boxscore + plays refresh every 8s
       const scheduleBoxRefresh = () => { _boxRefreshTimer = setTimeout(async () => { if (!document.querySelector('#scores.active') || !window._viewingHistory) { _boxRefreshTimer = null; return; } await refreshBoxScoreData(gameId); scheduleBoxRefresh(); }, 8000); }; scheduleBoxRefresh();
@@ -1520,29 +1520,17 @@ function abEventColor(ev) {
 let _abAnimTimer = null;
 
 function renderAbCount(balls, strikes, outs) {
-  const dm = document.getElementById('box-diamond');
-  if (!dm) return;
-  // Update just the BSO part — keep diamond as-is until end
-  const bso = document.getElementById('ab-bso');
-  if (bso) {
-    let h = '<span>B';
-    for (let i=0;i<4;i++) h+=`<span style="display:inline-block;width:5px;height:5px;border-radius:50%;margin-left:2px;background:${i<balls?'#4caf50':'#333'}"></span>`;
-    h+='</span><span>S';
-    for (let i=0;i<3;i++) h+=`<span style="display:inline-block;width:5px;height:5px;border-radius:50%;margin-left:2px;background:${i<strikes?'#f44336':'#333'}"></span>`;
-    h+='</span><span>O';
-    for (let i=0;i<3;i++) h+=`<span style="display:inline-block;width:5px;height:5px;border-radius:50%;margin-left:2px;background:${i<outs?'#ff9800':'#333'}"></span>`;
-    h+='</span>';
-    bso.innerHTML = h;
-  }
+  // BSO now shown via pitch dots in the zone
 }
 
 function renderAbDiamond(runners) {
-  const dm = document.getElementById('ab-diamond-svg');
-  if (!dm) return;
   const on = 'var(--green)', off = '#333';
-  dm.querySelector('#base-1').setAttribute('fill', runners.first?on:off);
-  dm.querySelector('#base-2').setAttribute('fill', runners.second?on:off);
-  dm.querySelector('#base-3').setAttribute('fill', runners.third?on:off);
+  const b1 = document.getElementById('card-base-1');
+  const b2 = document.getElementById('card-base-2');
+  const b3 = document.getElementById('card-base-3');
+  if (b1) b1.setAttribute('fill', runners.first?on:off);
+  if (b2) b2.setAttribute('fill', runners.second?on:off);
+  if (b3) b3.setAttribute('fill', runners.third?on:off);
 }
 
 function renderSelectedAtBat() {
@@ -1550,7 +1538,6 @@ function renderSelectedAtBat() {
   const card = document.getElementById('ab-card-display');
   const zone = document.getElementById('ab-strike-zone');
   const counter = document.getElementById('ab-counter');
-  const dm = document.getElementById('box-diamond');
   if (!card || !_boxAtBats.length) return;
   const ab = _boxAtBats[_boxAbIndex];
   // Update top batter card to match selected at-bat
@@ -1567,13 +1554,24 @@ function renderSelectedAtBat() {
     const c = p.call==='B'||p.call==='*B'?'#4caf50':p.call==='H'?'#ff9800':p.call==='X'||p.call==='D'||p.call==='E'?'#2196f3':(p.call==='F'||p.call==='T'||p.call==='O')&&p.strikes>=2&&i>0&&seq[i-1].strikes>=2?'#ffeb3b':'#f44336';
     return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c}"></span>`;
   }).join('');
-  card.innerHTML = `<div style="padding:12px;border:1px solid var(--border);border-radius:10px">
-    <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${ab.half==='top'?'▲':'▼'} ${ab.inning}</div>
-    <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="loadPlayer(${ab.batter_id})">${ab.batter}</div>
-    <div style="font-size:10px;color:var(--muted);margin:2px 0">vs ${ab.pitcher}</div>
-    <div style="font-size:12px;font-weight:700;color:${abEventColor(ab.event)};margin:6px 0">${ab.event}${ab.rbi?' <span style="font-size:10px;color:var(--gold)">+'+ab.rbi+' RBI</span>':''}</div>
-    <div style="font-size:10px;color:var(--muted)">${ab.description}</div>
-    <div style="display:flex;gap:3px;margin-top:6px;align-items:center">${pitchDots}<span style="font-size:9px;color:var(--muted);margin-left:4px">${ab.pitches}P</span></div>
+  card.innerHTML = `<div style="padding:12px;border:1px solid var(--border);border-radius:10px;display:flex;gap:10px">
+    <div style="flex:1">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${ab.half==='top'?'▲':'▼'} ${ab.inning}</div>
+      <div style="font-size:13px;font-weight:600;cursor:pointer" onclick="loadPlayer(${ab.batter_id})">${ab.batter}</div>
+      <div style="font-size:10px;color:var(--muted);margin:2px 0">vs ${ab.pitcher}</div>
+      <div style="font-size:12px;font-weight:700;color:${abEventColor(ab.event)};margin:6px 0">${ab.event}${ab.rbi?' <span style="font-size:10px;color:var(--gold)">+'+ab.rbi+' RBI</span>':''}</div>
+      <div style="font-size:10px;color:var(--muted)">${ab.description}</div>
+      <div style="display:flex;gap:3px;margin-top:6px;align-items:center">${pitchDots}<span style="font-size:9px;color:var(--muted);margin-left:4px">${ab.pitches}P</span></div>
+    </div>
+    <div id="ab-card-diamond" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
+      <svg width="50" height="50" viewBox="0 0 100 100">
+        <rect id="card-base-2" x="35" y="10" width="30" height="30" rx="2" transform="rotate(45 50 25)" fill="#333" stroke="#555" stroke-width="1.5"/>
+        <rect id="card-base-1" x="55" y="30" width="30" height="30" rx="2" transform="rotate(45 70 45)" fill="#333" stroke="#555" stroke-width="1.5"/>
+        <rect id="card-base-3" x="15" y="30" width="30" height="30" rx="2" transform="rotate(45 30 45)" fill="#333" stroke="#555" stroke-width="1.5"/>
+        <polygon points="50,75 45,80 50,85 55,80" fill="#fff" stroke="#555" stroke-width="1"/>
+      </svg>
+      <div id="ab-card-score" style="font-size:9px;color:var(--muted);white-space:nowrap;margin-top:2px"></div>
+    </div>
   </div>`;
   if (counter) counter.textContent = `${_boxAbIndex+1} / ${_boxAtBats.length}`;
   const liveBtn = document.getElementById('ab-live-btn');
@@ -1595,19 +1593,12 @@ function renderSelectedAtBat() {
   // Setup diamond with BSO if present
   const prevAb = _boxAbIndex > 0 ? _boxAtBats[_boxAbIndex-1] : null;
   const sameHalfInning = prevAb && prevAb.inning === ab.inning && prevAb.half === ab.half;
-  if (dm) {
-    dm.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
-      <svg id="ab-diamond-svg" width="60" height="60" viewBox="0 0 100 100">
-        <rect id="base-2" x="35" y="10" width="30" height="30" rx="2" transform="rotate(45 50 25)" fill="#333" stroke="#555" stroke-width="1.5"/>
-        <rect id="base-1" x="55" y="30" width="30" height="30" rx="2" transform="rotate(45 70 45)" fill="#333" stroke="#555" stroke-width="1.5"/>
-        <rect id="base-3" x="15" y="30" width="30" height="30" rx="2" transform="rotate(45 30 45)" fill="#333" stroke="#555" stroke-width="1.5"/>
-        <polygon points="50,75 45,80 50,85 55,80" fill="#fff" stroke="#555" stroke-width="1"/>
-      </svg>
-      <div id="ab-bso" style="display:flex;gap:6px;margin-top:4px;font-size:9px;color:var(--muted);white-space:nowrap"></div>
-      <div id="ab-score" style="margin-top:4px;font-size:9px;color:var(--muted);white-space:nowrap">${ab.away_abbr||''} ${prevAb?prevAb.away_score??0:ab.away_score??0} - ${prevAb?prevAb.home_score??0:ab.home_score??0} ${ab.home_abbr||''}</div>
-    </div>`;
-    if (sameHalfInning && prevAb.runners) renderAbDiamond(prevAb.runners);
-  }
+  // Update card diamond with starting runners
+  if (sameHalfInning && prevAb.runners) renderAbDiamond(prevAb.runners);
+  else renderAbDiamond({first:false,second:false,third:false});
+  // Update score
+  const scoreEl = document.getElementById('ab-card-score');
+  if (scoreEl) scoreEl.textContent = `${ab.away_abbr||''} ${prevAb?prevAb.away_score??0:ab.away_score??0} - ${prevAb?prevAb.home_score??0:ab.home_score??0} ${ab.home_abbr||''}`;
   const matchupEl = document.getElementById('ab-matchup');
   if (matchupEl) matchupEl.innerHTML = `<span style="font-weight:600;color:var(--text)">${ab.batter}</span> <span style="color:var(--muted)">vs</span> <span style="color:var(--muted)">${ab.pitcher}</span>`;
 
@@ -1643,7 +1634,7 @@ function renderSelectedAtBat() {
     renderAbCount(last.balls||0, last.strikes||0, last.outs||0);
     renderPitchLog(pitches, ab.event);
     if (ab.runners) renderAbDiamond(ab.runners);
-    const scoreEl = document.getElementById('ab-score');
+    const scoreEl = document.getElementById('ab-card-score');
     if (scoreEl) scoreEl.textContent = `${ab.away_abbr||''} ${ab.away_score??0} - ${ab.home_score??0} ${ab.home_abbr||''}`;
     _lastAnimatedAbIndex = _boxAbIndex;
     _lastAnimatedPitchCount = pitches.length;
@@ -1676,7 +1667,7 @@ function renderSelectedAtBat() {
       _lastAnimatedPitchCount = pitches.length;
       // Show final runners and update score
       if (ab.runners) renderAbDiamond(ab.runners);
-      const scoreEl = document.getElementById('ab-score');
+      const scoreEl = document.getElementById('ab-card-score');
       if (scoreEl) scoreEl.textContent = `${ab.away_abbr||''} ${ab.away_score??0} - ${ab.home_score??0} ${ab.home_abbr||''}`;
       return;
     }
@@ -1950,9 +1941,8 @@ async function renderBoxScore(gameId) {
   html += `<div class="player-card" style="padding:12px;position:relative;overflow:visible">`;
   html += `<div id="ab-live-btn" onclick="abGoLive()" style="position:absolute;bottom:10px;right:12px;font-size:9px;font-weight:700;cursor:pointer;padding:3px 8px;border-radius:10px;background:var(--red);color:#fff;box-shadow:0 0 6px var(--red);transition:all .3s">● LIVE</div>`;
   html += `<div id="ab-matchup" style="text-align:center;font-size:11px;margin-bottom:8px;height:16px"><span style="font-weight:600;color:var(--text)"></span></div>`;
-  html += `<div style="display:flex;flex-direction:column;align-items:center;gap:8px">`;
+  html += `<div style="display:flex;flex-direction:column;align-items:center">`;
   html += `<div id="ab-strike-zone" style="width:260px;height:270px;overflow:visible"></div>`;
-  html += `<div id="box-diamond" style="width:100px;height:80px"></div>`;
   html += `</div>`;
   html += `<div id="ab-pitch-log" style="height:80px;overflow-y:auto;padding:6px 12px;border-top:1px solid var(--border);margin-top:12px;font-family:'SF Mono','Fira Code',monospace;display:flex;flex-direction:column;align-items:center"></div>`;
   html += `<div id="ab-replay-btn" onclick="abReplay()" style="position:absolute;bottom:10px;left:12px;font-size:9px;font-weight:700;cursor:pointer;padding:3px 8px;border-radius:10px;background:#333;color:var(--text);border:1px solid var(--border)">↺ Replay</div>`;
