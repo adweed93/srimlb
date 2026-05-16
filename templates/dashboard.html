@@ -1445,7 +1445,7 @@ function renderStrikeZone(pitches, lastPitch, batSide) {
   const zoneH = zoneB - zoneT;
   const zoneW = zoneR - zoneL;
   const batterImg = '';
-  const batterHtml = batSide ? `<img src="/static/batters/batter_${window._batterHome?'home':'away'}_${batSide==='L'?'left':'right'}_${window._batterTeamId||110}.png" style="position:absolute;height:95%;bottom:0;${batSide==='L'?'right:5px':'left:5px'};opacity:0.6;pointer-events:none;transform:${batSide==='L'?'scaleX(-1)':'none'}"/>` : '';
+  const batterHtml = batSide ? `<img src="/static/batters/batter_${window._batterHome?'home':'away'}_${batSide==='L'?'left':'right'}_${window._batterTeamId||110}.png" style="position:absolute;height:95%;bottom:0;${batSide==='L'?'left:5px':'right:5px'};opacity:0.6;pointer-events:none"/>` : '';
   return `<div style="display:flex;flex-direction:column;align-items:center"><div style="position:relative;display:inline-block">
     ${batterHtml}
     <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="position:relative;z-index:1">
@@ -1555,9 +1555,9 @@ function renderAbCount(balls, strikes, outs) {
   // Position opposite the batter image (batter left = BSO right, batter right = BSO left)
   const ab = _boxAtBats[_boxAbIndex];
   const isLefty = ab && ab.bat_side === 'L';
-  // Lefty batter on right side, BSO on left. Righty batter on left side, BSO on right.
-  el.style.left = isLefty ? '8px' : '';
-  el.style.right = isLefty ? '' : '8px';
+  // Lefty image is on left (left:5px), BSO on right. Righty image on right (right:5px), BSO on left.
+  el.style.right = isLefty ? '8px' : '';
+  el.style.left = isLefty ? '' : '8px';
   const dot = (filled, color) => `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${filled?color:'#333'}"></span>`;
   el.innerHTML = `<div style="display:flex;gap:2px;align-items:center"><span style="width:10px">B</span>${[0,1,2,3].map(i=>dot(i<balls,'#4caf50')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">S</span>${[0,1,2].map(i=>dot(i<strikes,'#f44336')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">O</span>${[0,1,2].map(i=>dot(i<outs,'#ab47bc')).join('')}</div>`;
 }
