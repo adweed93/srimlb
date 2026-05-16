@@ -1939,24 +1939,29 @@ def game_plays(game_id):
                     })
             # Runners at end of at-bat — track base state across the half-inning
             play_runners = play.get("runners", [])
-            # Determine which bases were vacated or occupied by runners in this play
-            bases_vacated = set()
-            bases_occupied = set()
+            # Group by runner to find their original start and final end position
+            runner_movements = {}
             for pr in play_runners:
-                start_base = pr.get("movement", {}).get("start", "")
-                end_base = pr.get("movement", {}).get("end", "")
-                if start_base in ("1B", "2B", "3B"):
-                    bases_vacated.add(start_base)
-                if end_base in ("1B", "2B", "3B"):
-                    bases_occupied.add(end_base)
-            # Start from previous base state, remove vacated, add occupied
+                name = pr.get("details", {}).get("runner", {}).get("fullName", "")
+                start_base = pr.get("movement", {}).get("start", "") or ""
+                end_base = pr.get("movement", {}).get("end", "") or ""
+                if name not in runner_movements:
+                    runner_movements[name] = {"start": start_base, "end": end_base}
+                else:
+                    # Keep the earliest start and latest end
+                    if not runner_movements[name]["start"] and start_base:
+                        runner_movements[name]["start"] = start_base
+                    runner_movements[name]["end"] = end_base
+            # Apply movements: vacate original base, occupy final base
             end_bases = dict(current_bases)
-            for b in bases_vacated:
-                key = {"1B": "first", "2B": "second", "3B": "third"}[b]
-                end_bases[key] = False
-            for b in bases_occupied:
-                key = {"1B": "first", "2B": "second", "3B": "third"}[b]
-                end_bases[key] = True
+            for name, mv in runner_movements.items():
+                if mv["start"] in ("1B", "2B", "3B"):
+                    key = {"1B": "first", "2B": "second", "3B": "third"}[mv["start"]]
+                    end_bases[key] = False
+            for name, mv in runner_movements.items():
+                if mv["end"] in ("1B", "2B", "3B"):
+                    key = {"1B": "first", "2B": "second", "3B": "third"}[mv["end"]]
+                    end_bases[key] = True
             current_bases = dict(end_bases)
             at_bats.append({
                 "inning": about.get("inning", 0),
