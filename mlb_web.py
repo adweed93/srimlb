@@ -35,6 +35,49 @@ app = Flask(__name__, template_folder=str(Path(__file__).parent / "templates"))
 FAVORITES_FILE = Path(__file__).parent / "mlb_favorites.json"
 LAST_RUN_FILE = Path(__file__).parent / "mlb_last_run.json"
 
+# All 30 MLB team IDs
+ALL_TEAM_IDS = [108,109,110,111,112,113,114,115,116,117,118,119,120,121,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,158]
+
+def _build_team_rotation_global(team_id):
+    """Fetch season-long starter history for a team. Cached 6hrs."""
+    def _fetch():
+        today = datetime.now()
+        start = f"03/20/{today.year}"
+        end = today.strftime("%m/%d/%Y")
+        sched = statsapi.schedule(team=team_id, start_date=start, end_date=end)
+        finals = sorted([x for x in sched if x["status"] == "Final"], key=lambda x: x["game_date"])
+        starter_history = []
+        for fg in finals:
+            try:
+                gd = statsapi.get("game", {"gamePk": fg["game_id"]})
+                side = "home" if fg.get("home_id") == team_id else "away"
+                box = gd["liveData"]["boxscore"]["teams"][side]
+                pitchers = box.get("pitchers", [])
+                if pitchers:
+                    pid = pitchers[0]
+                    pdata = box.get("players", {}).get(f"ID{pid}", {})
+                    name = pdata.get("person", {}).get("fullName", "")
+                    if name:
+                        starter_history.append(name)
+            except Exception:
+                continue
+        return starter_history
+    return _cached(f"rotation_{team_id}", _fetch, ttl_seconds=21600)
+
+def _warm_rotation_cache():
+    """Background task: pre-cache rotation data for all 30 teams."""
+    import time
+    time.sleep(5)  # let the app finish starting
+    for tid in ALL_TEAM_IDS:
+        try:
+            _build_team_rotation_global(tid)
+        except Exception:
+            pass
+
+# Start background cache warming on app load
+import threading
+threading.Thread(target=_warm_rotation_cache, daemon=True).start()
+
 
 def _get_player_rankings(player_name, group, team_id=None):
     """Find a player's current MLB/league rankings across key stats."""
@@ -1500,29 +1543,7 @@ def game_preview(game_id):
 
         def _build_team_rotation(team_id):
             """Fetch season-long starter history for a team. Cached 6hrs."""
-            def _fetch():
-                today = datetime.now()
-                start = f"03/20/{today.year}"
-                end = today.strftime("%m/%d/%Y")
-                sched = statsapi.schedule(team=team_id, start_date=start, end_date=end)
-                finals = sorted([x for x in sched if x["status"] == "Final"], key=lambda x: x["game_date"])
-                starter_history = []
-                for fg in finals:
-                    try:
-                        gd = statsapi.get("game", {"gamePk": fg["game_id"]})
-                        side = "home" if fg.get("home_id") == team_id else "away"
-                        box = gd["liveData"]["boxscore"]["teams"][side]
-                        pitchers = box.get("pitchers", [])
-                        if pitchers:
-                            pid = pitchers[0]
-                            pdata = box.get("players", {}).get(f"ID{pid}", {})
-                            name = pdata.get("person", {}).get("fullName", "")
-                            if name:
-                                starter_history.append(name)
-                    except Exception:
-                        continue
-                return starter_history
-            return _cached(f"rotation_{team_id}", _fetch, ttl_seconds=21600)
+            return _build_team_rotation_global(team_id)
 
         def predict_pitcher(team_id, game_date_str=None, exclude=None):
             """Predict next starter by projecting the rotation order forward."""
