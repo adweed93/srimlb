@@ -1914,11 +1914,7 @@ def game_plays(game_id):
             result = play.get("result", {})
             about = play.get("about", {})
             matchup = play.get("matchup", {})
-            if not result.get("description"):
-                continue
-            if not about.get("isComplete", False):
-                continue
-            # Reset bases on new half-inning
+            # Reset bases on new half-inning (do this for ALL plays, not just complete ones)
             half_inning_key = f"{about.get('halfInning','')}{about.get('inning',0)}"
             if half_inning_key != prev_half_inning:
                 current_bases = {"first": False, "second": False, "third": False}
@@ -1926,6 +1922,31 @@ def game_plays(game_id):
                 if about.get("inning", 0) >= 10:
                     current_bases["second"] = True
                 prev_half_inning = half_inning_key
+            # For incomplete plays (stolen bases, WP, PB, balks, CS, pickoffs),
+            # still update base state from their runner movements
+            if not about.get("isComplete", False) or not result.get("description"):
+                play_runners = play.get("runners", [])
+                if play_runners:
+                    runner_movements = {}
+                    for pr in play_runners:
+                        name = pr.get("details", {}).get("runner", {}).get("fullName", "")
+                        start_base = pr.get("movement", {}).get("start", "") or ""
+                        end_base = pr.get("movement", {}).get("end", "") or ""
+                        if name not in runner_movements:
+                            runner_movements[name] = {"start": start_base, "end": end_base}
+                        else:
+                            if not runner_movements[name]["start"] and start_base:
+                                runner_movements[name]["start"] = start_base
+                            runner_movements[name]["end"] = end_base
+                    for name, mv in runner_movements.items():
+                        if mv["start"] in ("1B", "2B", "3B"):
+                            key = {"1B": "first", "2B": "second", "3B": "third"}[mv["start"]]
+                            current_bases[key] = False
+                    for name, mv in runner_movements.items():
+                        if mv["end"] in ("1B", "2B", "3B"):
+                            key = {"1B": "first", "2B": "second", "3B": "third"}[mv["end"]]
+                            current_bases[key] = True
+                continue
             events = play.get("playEvents", [])
             pitches = []
             for ev in events:
