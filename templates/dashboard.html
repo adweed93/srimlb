@@ -1708,6 +1708,10 @@ function renderSelectedAtBat() {
     if (zone) zone.innerHTML = renderStrikeZone(shown, shown[shown.length-1], ab.bat_side);
     renderAbCount(pitches[i].balls||0, pitches[i].strikes||0, pitches[i].outs||0);
     renderPitchLog(shown, ab.event);
+    // Update diamond on last pitch (ball in play — runners move)
+    if (i === pitches.length - 1 && ab.runners) {
+      renderAbDiamond(ab.runners);
+    }
     i++;
   }, animSpeed);
 }
