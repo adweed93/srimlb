@@ -358,7 +358,8 @@ function gameCard(g, status) {
   let bso = '';
   if (status==='live') {
     const b = g.balls||0, s = g.strikes||0, o = g.outs||0;
-    bso = `<div style="display:flex;gap:8px;padding:4px 12px;font-size:10px;color:var(--muted)">
+    bso = `<div style="display:flex;gap:8px;padding:4px 12px;font-size:10px;color:var(--muted);align-items:center">
+      <span>${b}-${s}</span>
       <span>O ${[...Array(3)].map((_,i)=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:2px;background:${i<o?'#f44336':'#333'}"></span>`).join('')}</span>
     </div>`;
   }
