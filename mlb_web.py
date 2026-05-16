@@ -1495,12 +1495,11 @@ def game_preview(game_id):
             return {"id": 0, "name": name, "era": "---", "wins": 0, "losses": 0, "whip": "---", "k": 0, "ip": "0", "predicted": predicted}
 
         def predict_pitcher(team_id, game_date_str=None, exclude=None):
-            """Predict next starter using rotation order and days rest.
+            """Predict next starter by projecting the rotation order forward.
             
-            Args:
-                team_id: MLB team ID
-                game_date_str: YYYY-MM-DD date of the game to predict for
-                exclude: list of pitcher names to exclude (already pitching in earlier games)
+            Builds the rotation order from recent starts, finds how many team
+            games are between the last start and the target game, then cycles
+            through the rotation to pick the right slot.
             """
             try:
                 exclude = exclude or []
@@ -1509,9 +1508,9 @@ def game_preview(game_id):
                 end = target_date.strftime("%m/%d/%Y")
                 sched = statsapi.schedule(team=team_id, start_date=start, end_date=end)
                 finals = sorted([x for x in sched if x["status"] == "Final"], key=lambda x: x["game_date"])
-                # Build chronological list of (starter_name, game_date)
+                # Build chronological starter list from completed games
                 starter_history = []
-                for fg in finals[-12:]:
+                for fg in finals[-15:]:
                     try:
                         gd = statsapi.get("game", {"gamePk": fg["game_id"]})
                         side = "home" if fg.get("home_id") == team_id else "away"
@@ -1522,47 +1521,48 @@ def game_preview(game_id):
                             pdata = box.get("players", {}).get(f"ID{pid}", {})
                             name = pdata.get("person", {}).get("fullName", "")
                             if name:
-                                starter_history.append((name, fg["game_date"]))
+                                starter_history.append(name)
                     except Exception:
                         continue
-                # Also include announced probable pitchers for games between now and target
-                upcoming = [x for x in sched if x["status"] != "Final" and x.get("game_date", "") < game_date_str]
+                if not starter_history:
+                    return None
+                # Also append announced starters for games between last final and target
+                game_date_cutoff = finals[-1]["game_date"] if finals else ""
+                upcoming = sorted(
+                    [x for x in sched if x["status"] != "Final" and x.get("game_date", "") <= game_date_str],
+                    key=lambda x: x["game_date"]
+                )
                 for ug in upcoming:
                     side_key = "away_probable_pitcher" if ug.get("away_id") == team_id else "home_probable_pitcher"
                     announced = ug.get(side_key)
                     if announced:
-                        starter_history.append((announced, ug["game_date"]))
-                if not starter_history:
+                        starter_history.append(announced)
+                # Derive rotation order from the last N starts (deduplicated, preserving order)
+                rotation = []
+                for name in reversed(starter_history):
+                    if name not in rotation:
+                        rotation.append(name)
+                    if len(rotation) >= 5:
+                        break
+                rotation.reverse()  # now in rotation order (oldest first)
+                if not rotation:
                     return None
-                # Identify rotation members (pitched 2+ starts in window)
-                from collections import Counter
-                start_counts = Counter(name for name, _ in starter_history)
-                rotation = [name for name, count in start_counts.items() if count >= 2]
-                # Fallback: if fewer than 3 qualify, use last 5 unique starters
-                if len(rotation) < 3:
-                    seen = []
-                    for name, _ in reversed(starter_history):
-                        if name not in seen:
-                            seen.append(name)
-                        if len(seen) >= 5:
-                            break
-                    rotation = seen
-                # Find each rotation member's last start date (most recent per pitcher)
-                last_start = {}
-                for name, gdate in reversed(starter_history):
-                    if name in rotation and name not in last_start:
-                        last_start[name] = datetime.strptime(gdate, "%Y-%m-%d").date()
-                # Exclude pitchers already assigned to earlier games
-                for ex in exclude:
-                    last_start.pop(ex, None)
-                # Filter out pitchers without enough rest relative to target game date
-                eligible = {name: d for name, d in last_start.items() if (target_date - d).days >= 4}
-                if not eligible:
-                    eligible = {name: d for name, d in last_start.items() if (target_date - d).days >= 3}
-                if not eligible:
-                    return None
-                # Pick the pitcher with the longest rest
-                predicted = max(eligible, key=lambda n: (target_date - eligible[n]).days)
+                # Count how many team games from last final to target (inclusive of target)
+                games_ahead = len([x for x in upcoming if x.get("game_date", "") <= game_date_str])
+                if games_ahead < 1:
+                    games_ahead = 1
+                # The last starter in history is slot 0 (just pitched), next game is slot 1, etc.
+                last_starter = starter_history[-1]
+                try:
+                    last_idx = rotation.index(last_starter)
+                except ValueError:
+                    last_idx = 0
+                predicted_idx = (last_idx + games_ahead) % len(rotation)
+                predicted = rotation[predicted_idx]
+                # If predicted is in exclude list, advance one more slot
+                if predicted in exclude:
+                    predicted_idx = (predicted_idx + 1) % len(rotation)
+                    predicted = rotation[predicted_idx]
                 return predicted
             except Exception:
                 pass
