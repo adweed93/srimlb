@@ -118,7 +118,7 @@ def search_player():
     # Try exact lookup first
     results = statsapi.lookup_player(q)
     if results:
-        teams_data = {t["id"]: t["name"] for t in statsapi.get("teams", {"sportIds": 1})["teams"]}
+        teams_data = {t["id"]: t["name"] for t in _cached("all_teams", lambda: statsapi.get("teams", {"sportIds": 1})["teams"], ttl_seconds=86400)}
         return jsonify([{
             "id": p["id"],
             "name": p["fullName"],
@@ -146,7 +146,7 @@ def search_player():
                 if info:
                     tid = info[0].get("currentTeam", {}).get("id")
                     if tid:
-                        team = statsapi.get("teams", {"sportIds": 1})["teams"]
+                        team = _cached("all_teams", lambda: statsapi.get("teams", {"sportIds": 1})["teams"], ttl_seconds=86400)
                         team = next((t["name"] for t in team if t["id"] == tid), "Free Agent")
             except Exception:
                 pass
@@ -166,7 +166,7 @@ def search_team():
         return jsonify([{"id": t["id"], "name": t["name"]} for t in results[:10]])
     # Fuzzy fallback — match against all MLB teams
     from difflib import get_close_matches
-    all_teams = statsapi.get("teams", {"sportIds": 1})["teams"]
+    all_teams = _cached("all_teams", lambda: statsapi.get("teams", {"sportIds": 1})["teams"], ttl_seconds=86400)
     names = {t["name"]: t for t in all_teams}
     # Also index by abbreviation and short name
     for t in all_teams:
@@ -746,7 +746,8 @@ def player_stats(player_id):
 @app.route("/api/player/<int:player_id>/career")
 def player_career(player_id):
     """Get career stats for a player with career-context anomalies."""
-    info = statsapi.player_stat_data(player_id, type="career")
+    info = _cached(f"player_career_{player_id}",
+                   lambda: statsapi.player_stat_data(player_id, type="career"), ttl_seconds=3600)
     stats = {}
     group = ""
     is_pitcher = info.get("position", "") == "P"
@@ -883,7 +884,8 @@ def player_career(player_id):
     # HOF pace comparisons — compare to greats at the same point in their career
     pace_comps = []
     try:
-        yby_info = statsapi.player_stat_data(player_id, type="yearByYear")
+        yby_info = _cached(f"player_yby_{player_id}",
+                           lambda: statsapi.player_stat_data(player_id, type="yearByYear"), ttl_seconds=3600)
         seasons_played = sum(1 for sg in yby_info.get("stats", []) if sg["group"] in ("hitting", "pitching") and sg.get("stats", {}).get("gamesPlayed"))
     except Exception:
         seasons_played = 0
@@ -1206,7 +1208,8 @@ def player_career(player_id):
 @app.route("/api/player/<int:player_id>/yearByYear")
 def player_year_by_year(player_id):
     """Get year-by-year historical stats with standout season flags."""
-    info = statsapi.player_stat_data(player_id, type="yearByYear")
+    info = _cached(f"player_yby_{player_id}",
+                   lambda: statsapi.player_stat_data(player_id, type="yearByYear"), ttl_seconds=3600)
     is_pitcher = info.get("position", "") == "P"
     preferred = "pitching" if is_pitcher else "hitting"
     group = preferred
@@ -1344,7 +1347,8 @@ def player_year_by_year(player_id):
 @app.route("/api/player/<int:player_id>/live")
 def player_live(player_id):
     """Get player's current live game stats."""
-    info = statsapi.player_stat_data(player_id, type="season")
+    info = _cached(f"player_season_{player_id}",
+                   lambda: statsapi.player_stat_data(player_id, type="season"), ttl_seconds=60)
     name = info.get("first_name", "") + " " + info.get("last_name", "")
     position = info.get("position", "")
     team_name = info.get("current_team", "")
@@ -1478,10 +1482,10 @@ def game_preview(game_id):
             if not name:
                 return None
             try:
-                players = statsapi.lookup_player(name)
+                players = _cached(f"lookup_{name}", lambda: statsapi.lookup_player(name), ttl_seconds=86400)
                 if players:
                     pid = players[0]["id"]
-                    d = statsapi.player_stat_data(pid, type="season", group="pitching")
+                    d = _cached(f"pitcher_season_{pid}", lambda: statsapi.player_stat_data(pid, type="season", group="pitching"), ttl_seconds=300)
                     st = {}
                     for sg in d.get("stats", []):
                         if sg["group"] == "pitching":
