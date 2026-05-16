@@ -1556,8 +1556,8 @@ function renderAbCount(balls, strikes, outs) {
   const ab = _boxAtBats[_boxAbIndex];
   const isLefty = ab && ab.bat_side === 'L';
   // Lefty image is on left (left:5px), BSO on right. Righty image on right (right:5px), BSO on left.
-  el.style.right = isLefty ? '8px' : '';
-  el.style.left = isLefty ? '' : '8px';
+  el.style.right = isLefty ? '8px' : 'auto';
+  el.style.left = isLefty ? 'auto' : '8px';
   const dot = (filled, color) => `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${filled?color:'#333'}"></span>`;
   el.innerHTML = `<div style="display:flex;gap:2px;align-items:center"><span style="width:10px">B</span>${[0,1,2,3].map(i=>dot(i<balls,'#4caf50')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">S</span>${[0,1,2].map(i=>dot(i<strikes,'#f44336')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">O</span>${[0,1,2].map(i=>dot(i<outs,'#ab47bc')).join('')}</div>`;
 }
