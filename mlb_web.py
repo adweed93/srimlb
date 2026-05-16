@@ -1905,6 +1905,8 @@ def game_plays(game_id):
         away_abbr = gd.get("teams", {}).get("away", {}).get("abbreviation", "AWY")
         home_abbr = gd.get("teams", {}).get("home", {}).get("abbreviation", "HME")
         at_bats = []
+        current_bases = {"first": False, "second": False, "third": False}
+        prev_half_inning = None
         for play in all_plays:
             result = play.get("result", {})
             about = play.get("about", {})
@@ -1913,6 +1915,11 @@ def game_plays(game_id):
                 continue
             if not about.get("isComplete", False):
                 continue
+            # Reset bases on new half-inning
+            half_inning_key = f"{about.get('halfInning','')}{about.get('inning',0)}"
+            if half_inning_key != prev_half_inning:
+                current_bases = {"first": False, "second": False, "third": False}
+                prev_half_inning = half_inning_key
             events = play.get("playEvents", [])
             pitches = []
             for ev in events:
@@ -1930,14 +1937,27 @@ def game_plays(game_id):
                         "strikes": ct.get("strikes", 0),
                         "outs": ct.get("outs", 0),
                     })
-            # Runners at end of at-bat
+            # Runners at end of at-bat — track base state across the half-inning
             play_runners = play.get("runners", [])
-            end_bases = {"first": False, "second": False, "third": False}
+            # Determine which bases were vacated or occupied by runners in this play
+            bases_vacated = set()
+            bases_occupied = set()
             for pr in play_runners:
+                start_base = pr.get("movement", {}).get("start", "")
                 end_base = pr.get("movement", {}).get("end", "")
-                if end_base == "1B": end_bases["first"] = True
-                elif end_base == "2B": end_bases["second"] = True
-                elif end_base == "3B": end_bases["third"] = True
+                if start_base in ("1B", "2B", "3B"):
+                    bases_vacated.add(start_base)
+                if end_base in ("1B", "2B", "3B"):
+                    bases_occupied.add(end_base)
+            # Start from previous base state, remove vacated, add occupied
+            end_bases = dict(current_bases)
+            for b in bases_vacated:
+                key = {"1B": "first", "2B": "second", "3B": "third"}[b]
+                end_bases[key] = False
+            for b in bases_occupied:
+                key = {"1B": "first", "2B": "second", "3B": "third"}[b]
+                end_bases[key] = True
+            current_bases = dict(end_bases)
             at_bats.append({
                 "inning": about.get("inning", 0),
                 "half": about.get("halfInning", ""),
