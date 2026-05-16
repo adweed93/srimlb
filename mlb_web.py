@@ -1922,6 +1922,9 @@ def game_plays(game_id):
             half_inning_key = f"{about.get('halfInning','')}{about.get('inning',0)}"
             if half_inning_key != prev_half_inning:
                 current_bases = {"first": False, "second": False, "third": False}
+                # Extra innings ghost runner on 2B (MLB rule since 2020, innings 10+)
+                if about.get("inning", 0) >= 10:
+                    current_bases["second"] = True
                 prev_half_inning = half_inning_key
             events = play.get("playEvents", [])
             pitches = []
@@ -1955,6 +1958,12 @@ def game_plays(game_id):
                     if not runner_movements[name]["start"] and start_base:
                         runner_movements[name]["start"] = start_base
                     runner_movements[name]["end"] = end_base
+            # Seed any runners on base that we don't know about (ghost runners in extras)
+            for name, mv in runner_movements.items():
+                if mv["start"] in ("1B", "2B", "3B"):
+                    key = {"1B": "first", "2B": "second", "3B": "third"}[mv["start"]]
+                    if not current_bases[key]:
+                        current_bases[key] = True
             # Apply movements: vacate original base, occupy final base
             end_bases = dict(current_bases)
             for name, mv in runner_movements.items():
