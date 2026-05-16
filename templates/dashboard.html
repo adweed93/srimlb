@@ -360,7 +360,7 @@ function gameCard(g, status) {
     const b = g.balls||0, s = g.strikes||0, o = g.outs||0;
     bso = `<div style="display:flex;gap:8px;padding:4px 12px;font-size:10px;color:var(--muted)">
       <span>B ${[...Array(4)].map((_,i)=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:2px;background:${i<b?'#4caf50':'#333'}"></span>`).join('')}</span>
-      <span>S ${[...Array(3)].map((_,i)=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:2px;background:${i<s?'#f44336':'#333'}"></span>`).join('')}</span>
+      <span>S ${[...Array(3)].map((_,i)=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:2px;background:${i<s?'#ff9800':'#333'}"></span>`).join('')}</span>
       <span>O ${[...Array(3)].map((_,i)=>`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:2px;background:${i<o?'#ff9800':'#333'}"></span>`).join('')}</span>
     </div>`;
   }
@@ -1402,7 +1402,7 @@ function renderDiamond(runners, count) {
   bso += '<span>B ';
   for (let i = 0; i < 4; i++) bso += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i < count.balls ? '#4caf50' : '#333'}"></span>`;
   bso += '</span><span>S ';
-  for (let i = 0; i < 3; i++) bso += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i < count.strikes ? '#f44336' : '#333'}"></span>`;
+  for (let i = 0; i < 3; i++) bso += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i < count.strikes ? '#ff9800' : '#333'}"></span>`;
   bso += '</span><span>O ';
   for (let i = 0; i < 3; i++) bso += `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:2px;background:${i < count.outs ? '#ff9800' : '#333'}"></span>`;
   bso += '</span></div>';
@@ -1434,7 +1434,7 @@ function renderStrikeZone(pitches, lastPitch, batSide) {
     if (p.x === 0 && p.y === 0) return;
     const cx = mapX(p.x), cy = mapY(p.y);
     const isLast = i === pitches.length - 1;
-    const color = p.call === 'H' ? '#ff9800' : p.call === 'B' || p.call === '*B' ? '#4caf50' : p.call === 'X' || p.call === 'D' || p.call === 'E' ? '#2196f3' : (p.call === 'F' || p.call === 'T' || p.call === 'O') && p.strikes >= 2 && i > 0 && pitches[i-1].strikes >= 2 ? '#ffeb3b' : '#f44336';
+    const color = p.call === 'H' ? '#ff9800' : p.call === 'B' || p.call === '*B' ? '#4caf50' : p.call === 'X' || p.call === 'D' || p.call === 'E' ? '#2196f3' : (p.call === 'F' || p.call === 'T' || p.call === 'O') && p.strikes >= 2 && i > 0 && pitches[i-1].strikes >= 2 ? '#ffeb3b' : '#ff9800';
     const r = isLast ? 8 : 6;
     const opacity = isLast ? 1 : 0.6;
     dots += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" opacity="${opacity}" stroke="${isLast?'#fff':'none'}" stroke-width="${isLast?1.5:0}"/>`;
@@ -1473,10 +1473,10 @@ function renderPitchLog(pitches, abEvent) {
     if (c==='H') return '#ff9800';
     if (c==='B'||c==='*B'||c==='V') return '#4caf50';
     // Ball in play: purple if out, blue if safe
-    if (c==='X'||c==='D'||c==='E') return (i === pitches.length-1 && _isOutEvent(abEvent)) ? '#e65100' : '#2196f3';
-    // Bunt in play - purple if out, blue if safe
-    if (c==='M' && i === pitches.length-1 && abEvent) return _isOutEvent(abEvent) ? '#e65100' : '#2196f3';
-    return '#f44336'; 
+    if (c==='X'||c==='D'||c==='E') return (i === pitches.length-1 && _isOutEvent(abEvent)) ? '#f44336' : '#2196f3';
+    // Bunt in play - red if out, blue if safe
+    if (c==='M' && i === pitches.length-1 && abEvent) return _isOutEvent(abEvent) ? '#f44336' : '#2196f3';
+    return '#ff9800'; 
   }
   const _shortEvent = {'Grounded Into DP':'Ground DP','Fielders Choice Out':'FC Out','Fielders Choice':'FC','Catcher Interference':'Catch Int','Fan Interference':'Fan Int','Sac Fly Double Play':'Sac Fly DP','Strikeout Double Play':'K DP','Sacrifice Bunt':'Sac Bunt','Sacrifice Fly':'Sac Fly','Bunt Groundout':'Bunt Out','Hit By Pitch':'HBP','Intent Walk':'IBB','Bunt Pop Out':'Bunt Out','Bunt Lineout':'Bunt Out','Groundout':'GrdOut','Lineout':'LineOut','Flyout':'FlyOut','Pop Out':'PopOut','Forceout':'ForceO','Strikeout':'K','Double Play':'DblPly','Triple Play':'TrpPly','Field Out':'FldOut','Field Error':'Error'};
   function pitchLabel(c, isLast) {
@@ -1543,7 +1543,7 @@ function abEventColor(ev) {
   if (e.includes('double') || e.includes('triple')) return 'var(--green)';
   if (e.includes('single') || e.includes('walk') || e.includes('hit by pitch')) return 'var(--blue)';
   if (e.includes('strikeout')) return 'var(--red)';
-  if (/out|dp|forceout|sac|caught|field out/i.test(ev)) return '#e65100';
+  if (/out|dp|forceout|sac|caught|field out/i.test(ev)) return '#f44336';
   return 'var(--muted)';
 }
 
@@ -1553,7 +1553,7 @@ function renderAbCount(balls, strikes, outs) {
   const el = document.getElementById('lb-bso');
   if (!el) return;
   const dot = (filled, color) => `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${filled?color:'#333'}"></span>`;
-  el.innerHTML = `<div style="display:flex;gap:2px;align-items:center"><span style="width:10px">B</span>${[0,1,2,3].map(i=>dot(i<balls,'#4caf50')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">S</span>${[0,1,2].map(i=>dot(i<strikes,'#f44336')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">O</span>${[0,1,2].map(i=>dot(i<outs,'#e65100')).join('')}</div>`;
+  el.innerHTML = `<div style="display:flex;gap:2px;align-items:center"><span style="width:10px">B</span>${[0,1,2,3].map(i=>dot(i<balls,'#4caf50')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">S</span>${[0,1,2].map(i=>dot(i<strikes,'#ff9800')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">O</span>${[0,1,2].map(i=>dot(i<outs,'#f44336')).join('')}</div>`;
 }
 
 function renderAbDiamond(runners) {
@@ -1586,7 +1586,7 @@ function renderSelectedAtBat() {
   }
   const seq = ab.pitch_sequence||[];
   const pitchDots = seq.map((p, i) => {
-    const c = p.call==='B'||p.call==='*B'?'#4caf50':p.call==='H'?'#ff9800':p.call==='X'||p.call==='D'||p.call==='E'?'#2196f3':(p.call==='F'||p.call==='T'||p.call==='O')&&p.strikes>=2&&i>0&&seq[i-1].strikes>=2?'#ffeb3b':'#f44336';
+    const c = p.call==='B'||p.call==='*B'?'#4caf50':p.call==='H'?'#ff9800':p.call==='X'||p.call==='D'||p.call==='E'?'#2196f3':(p.call==='F'||p.call==='T'||p.call==='O')&&p.strikes>=2&&i>0&&seq[i-1].strikes>=2?'#ffeb3b':'#ff9800';
     return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c}"></span>`;
   }).join('');
   card.innerHTML = `<div style="padding:12px;border:1px solid var(--border);border-radius:10px;display:flex;gap:10px">
