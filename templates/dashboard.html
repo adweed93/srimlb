@@ -1542,7 +1542,10 @@ function abEventColor(ev) {
 let _abAnimTimer = null;
 
 function renderAbCount(balls, strikes, outs) {
-  // BSO now shown via pitch dots in the zone
+  const el = document.getElementById('lb-bso');
+  if (!el) return;
+  const dot = (filled, color) => `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${filled?color:'#333'}"></span>`;
+  el.innerHTML = `<div style="display:flex;gap:2px;align-items:center"><span style="width:10px">B</span>${[0,1,2,3].map(i=>dot(i<balls,'#4caf50')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">S</span>${[0,1,2].map(i=>dot(i<strikes,'#f44336')).join('')}</div><div style="display:flex;gap:2px;align-items:center"><span style="width:10px">O</span>${[0,1,2].map(i=>dot(i<outs,'#ff9800')).join('')}</div>`;
 }
 
 function renderAbDiamond(runners) {
@@ -1566,9 +1569,11 @@ function renderSelectedAtBat() {
   const blb = document.getElementById('box-live-batter');
   if (blb) {
     blb.style.display = 'block';
-    if (blb.dataset.batterId !== String(ab.batter_id)) {
+    const needsUpdate = blb.dataset.batterId !== String(ab.batter_id) || blb.dataset.abIndex !== String(_boxAbIndex);
+    if (needsUpdate) {
       blb.dataset.batterId = ab.batter_id;
-      blb.innerHTML = `<div style="display:flex;align-items:center;gap:12px">${playerImg(ab.batter_id, 44)}<div style="flex:1"><div style="font-weight:700;font-size:14px;color:var(--text);cursor:pointer" onclick="loadPlayer(${ab.batter_id})">${ab.batter}</div><div class="lb-meta" style="font-size:11px;color:var(--muted)">vs ${ab.pitcher} • ${ab.half==='top'?'▲':'▼'}${ab.inning}</div><div class="lb-stats" style="font-size:12px;color:var(--green);margin-top:2px"></div></div></div>`;
+      blb.dataset.abIndex = _boxAbIndex;
+      blb.innerHTML = `<div style="display:flex;align-items:center;gap:12px;position:relative">${playerImg(ab.batter_id, 44)}<div style="flex:1"><div style="font-weight:700;font-size:14px;color:var(--text);cursor:pointer" onclick="loadPlayer(${ab.batter_id})">${ab.batter}</div><div class="lb-meta" style="font-size:11px;color:var(--muted)">vs ${ab.pitcher} • ${ab.half==='top'?'▲':'▼'}${ab.inning}</div></div><div id="lb-bso" style="display:flex;flex-direction:column;gap:3px;font-size:9px;color:var(--muted)"></div></div>`;
     }
   }
   const seq = ab.pitch_sequence||[];
@@ -1613,11 +1618,18 @@ function renderSelectedAtBat() {
   highlightInningNav();
 
   // Setup diamond with BSO if present
+  // Setup diamond with starting runners (before animation) or end runners (if skipping)
   const prevAb = _boxAbIndex > 0 ? _boxAtBats[_boxAbIndex-1] : null;
   const sameHalfInning = prevAb && prevAb.inning === ab.inning && prevAb.half === ab.half;
-  // Update card diamond with starting runners
-  if (sameHalfInning && prevAb.runners) renderAbDiamond(prevAb.runners);
-  else renderAbDiamond({first:false,second:false,third:false});
+  const willAnimate = _boxAbIndex !== _lastAnimatedAbIndex || _lastAnimatedPitchCount < (ab.pitch_sequence||[]).length;
+  if (willAnimate) {
+    // Show starting state (runners from previous AB result)
+    if (sameHalfInning && prevAb.runners) renderAbDiamond(prevAb.runners);
+    else renderAbDiamond({first:false,second:false,third:false});
+  } else {
+    // Not animating — show this at-bat's end-state runners
+    renderAbDiamond(ab.runners || {first:false,second:false,third:false});
+  }
   // Update score
   const scoreEl = document.getElementById('ab-card-score');
   if (scoreEl) scoreEl.textContent = `${ab.away_abbr||''} ${prevAb?prevAb.away_score??0:ab.away_score??0} - ${prevAb?prevAb.home_score??0:ab.home_score??0} ${ab.home_abbr||''}`;
