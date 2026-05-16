@@ -1504,13 +1504,13 @@ def game_preview(game_id):
             try:
                 exclude = exclude or []
                 target_date = datetime.strptime(game_date_str, "%Y-%m-%d").date() if game_date_str else datetime.now().date()
-                start = (target_date - timedelta(days=21)).strftime("%m/%d/%Y")
+                start = (target_date - timedelta(days=35)).strftime("%m/%d/%Y")
                 end = target_date.strftime("%m/%d/%Y")
                 sched = statsapi.schedule(team=team_id, start_date=start, end_date=end)
                 finals = sorted([x for x in sched if x["status"] == "Final"], key=lambda x: x["game_date"])
                 # Build chronological starter list from completed games
                 starter_history = []
-                for fg in finals[-15:]:
+                for fg in finals[-20:]:
                     try:
                         gd = statsapi.get("game", {"gamePk": fg["game_id"]})
                         side = "home" if fg.get("home_id") == team_id else "away"
@@ -1527,7 +1527,6 @@ def game_preview(game_id):
                 if not starter_history:
                     return None
                 # Also append announced starters for games between last final and target
-                game_date_cutoff = finals[-1]["game_date"] if finals else ""
                 upcoming = sorted(
                     [x for x in sched if x["status"] != "Final" and x.get("game_date", "") <= game_date_str],
                     key=lambda x: x["game_date"]
@@ -1537,22 +1536,30 @@ def game_preview(game_id):
                     announced = ug.get(side_key)
                     if announced:
                         starter_history.append(announced)
-                # Derive rotation order from the last N starts (deduplicated, preserving order)
+                # Identify true rotation members (2+ starts), filter out spot starters
+                from collections import Counter
+                start_counts = Counter(starter_history)
+                rotation_members = {name for name, count in start_counts.items() if count >= 2}
+                # Build rotation order from most recent appearances (preserving sequence)
                 rotation = []
                 for name in reversed(starter_history):
-                    if name not in rotation:
+                    if name in rotation_members and name not in rotation:
                         rotation.append(name)
-                    if len(rotation) >= 5:
-                        break
-                rotation.reverse()  # now in rotation order (oldest first)
+                rotation.reverse()  # chronological order
                 if not rotation:
                     return None
                 # Count how many team games from last final to target (inclusive of target)
                 games_ahead = len([x for x in upcoming if x.get("game_date", "") <= game_date_str])
                 if games_ahead < 1:
                     games_ahead = 1
-                # The last starter in history is slot 0 (just pitched), next game is slot 1, etc.
-                last_starter = starter_history[-1]
+                # Find the last rotation member who started (skip spot starters)
+                last_starter = None
+                for name in reversed(starter_history):
+                    if name in rotation_members:
+                        last_starter = name
+                        break
+                if not last_starter:
+                    last_starter = rotation[0]
                 try:
                     last_idx = rotation.index(last_starter)
                 except ValueError:
