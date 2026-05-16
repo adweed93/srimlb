@@ -1467,14 +1467,19 @@ function renderPitchLog(pitches, abEvent) {
   if (!el) return;
   if (!pitches || !pitches.length) { el.innerHTML = ''; return; }
   function pitchColor(c, p, i) { 
-    if ((c==='F'||c==='T'||c==='O') && p.strikes >= 2 && i > 0 && pitches[i-1].strikes >= 2) return '#ffeb3b';
+    // All foul types: yellow if already at 2 strikes
+    if ((c==='F'||c==='T'||c==='L'||c==='R'||c==='O') && p.strikes >= 2 && i > 0 && pitches[i-1].strikes >= 2) return '#ffeb3b';
     if (c==='H') return '#ff9800';
-    return c==='B'||c==='*B'?'#4caf50':c==='X'||c==='D'||c==='E'?'#2196f3':'#f44336'; 
+    if (c==='B'||c==='*B'||c==='V') return '#4caf50';
+    if (c==='X'||c==='D'||c==='E') return '#2196f3';
+    // Bunt in play (M code on last pitch with result) - blue unless out
+    if (c==='M' && i === pitches.length-1 && abEvent && !abEvent.match(/out|Out|DP|Error|Strikeout|Forceout/i)) return '#2196f3';
+    return '#f44336'; 
   }
-  const _shortEvent = {'Grounded Into DP':'Ground DP','Fielders Choice Out':'FC Out','Fielders Choice':'FC','Catcher Interference':'Catch Int','Fan Interference':'Fan Int','Sac Fly Double Play':'Sac Fly DP','Strikeout Double Play':'K DP','Sacrifice Bunt':'Sac Bunt','Sacrifice Fly':'Sac Fly','Bunt Groundout':'Bunt','Hit By Pitch':'HBP','Intent Walk':'IBB','Bunt Pop Out':'Bunt','Bunt Lineout':'Bunt','Groundout':'GrdOut','Lineout':'LineOut','Flyout':'FlyOut','Pop Out':'PopOut','Forceout':'ForceO','Strikeout':'K','Double Play':'DblPly','Triple Play':'TrpPly','Field Out':'FldOut','Field Error':'Error'};
+  const _shortEvent = {'Grounded Into DP':'Ground DP','Fielders Choice Out':'FC Out','Fielders Choice':'FC','Catcher Interference':'Catch Int','Fan Interference':'Fan Int','Sac Fly Double Play':'Sac Fly DP','Strikeout Double Play':'K DP','Sacrifice Bunt':'Sac Bunt','Sacrifice Fly':'Sac Fly','Bunt Groundout':'Bunt Out','Hit By Pitch':'HBP','Intent Walk':'IBB','Bunt Pop Out':'Bunt Out','Bunt Lineout':'Bunt Out','Groundout':'GrdOut','Lineout':'LineOut','Flyout':'FlyOut','Pop Out':'PopOut','Forceout':'ForceO','Strikeout':'K','Double Play':'DblPly','Triple Play':'TrpPly','Field Out':'FldOut','Field Error':'Error'};
   function pitchLabel(c, isLast) {
     if ((c==='X'||c==='D'||c==='E'||c==='H') && isLast && abEvent) return _shortEvent[abEvent]||abEvent;
-    return c==='C'?'Strike':c==='B'?'Ball':c==='*B'?'Ball':c==='S'?'Swg':c==='W'?'Swg':c==='Q'?'Swg':c==='F'?'Foul':c==='T'?'Tip':c==='L'?'Foul':c==='R'?'Foul':c==='X'||c==='D'||c==='E'?'Play':c==='H'?'HBP':c==='M'?'Bunt':c==='O'?'Foul':c==='P'?'Pitchout':c==='V'?'Auto Ball':'?';
+    return c==='C'?'Strike':c==='B'?'Ball':c==='*B'?'Ball':c==='S'?'Swing':c==='W'?'Swing':c==='Q'?'Swing':c==='F'?'Foul':c==='T'?'Foul':c==='L'?'Foul':c==='R'?'Foul':c==='X'||c==='D'||c==='E'?'Play':c==='H'?'HBP':c==='M'?'Bunt':c==='O'?'Foul':c==='P'?'Pitchout':c==='V'?'Auto Ball':'?';
   }
   let html = '<div style="width:fit-content;margin:0 auto">';
   const pitchName = {FF:'4-Seam',SI:'Sinker',FC:'Cutter',SL:'Slider',CU:'Curve',CH:'Change',FS:'Split',KC:'Knk Crv',ST:'Sweep',SV:'Slurve',KN:'Knuck',EP:'Eephus',SC:'Screw',CS:'Sl Crv',FA:'Fastbl',FT:'2-Seam'};
