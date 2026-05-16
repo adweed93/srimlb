@@ -1963,6 +1963,10 @@ def game_plays(game_id):
                     key = {"1B": "first", "2B": "second", "3B": "third"}[mv["end"]]
                     end_bases[key] = True
             current_bases = dict(end_bases)
+            # Compute outs after this play
+            outs_on_play = sum(1 for pr in play_runners if pr.get("movement", {}).get("isOut", False))
+            outs_before = pitches[-1]["outs"] if pitches else 0
+            outs_after = outs_before + outs_on_play
             at_bats.append({
                 "inning": about.get("inning", 0),
                 "half": about.get("halfInning", ""),
@@ -1977,6 +1981,7 @@ def game_plays(game_id):
                 "pitches": len(pitches),
                 "pitch_sequence": pitches,
                 "runners": end_bases,
+                "outs_after": outs_after,
                 "away_score": result.get("awayScore", 0),
                 "home_score": result.get("homeScore", 0),
                 "away_abbr": away_abbr,

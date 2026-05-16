@@ -1669,7 +1669,7 @@ function renderSelectedAtBat() {
   if (skipCount >= pitches.length) {
     if (zone) zone.innerHTML = renderStrikeZone(pitches, pitches[pitches.length-1], ab.bat_side);
     const last = pitches[pitches.length-1];
-    renderAbCount(last.balls||0, last.strikes||0, last.outs||0);
+    renderAbCount(last.balls||0, last.strikes||0, ab.outs_after != null ? ab.outs_after : last.outs||0);
     renderPitchLog(pitches, ab.event);
     if (ab.runners) renderAbDiamond(ab.runners);
     const scoreEl = document.getElementById('ab-card-score');
@@ -1711,7 +1711,8 @@ function renderSelectedAtBat() {
     }
     const shown = pitches.slice(0, i+1);
     if (zone) zone.innerHTML = renderStrikeZone(shown, shown[shown.length-1], ab.bat_side);
-    renderAbCount(pitches[i].balls||0, pitches[i].strikes||0, pitches[i].outs||0);
+    const outsToShow = (i === pitches.length - 1 && ab.outs_after != null) ? ab.outs_after : (pitches[i].outs||0);
+    renderAbCount(pitches[i].balls||0, pitches[i].strikes||0, outsToShow);
     renderPitchLog(shown, ab.event);
     // Update diamond on last pitch (ball in play — runners move)
     if (i === pitches.length - 1 && ab.runners) {
